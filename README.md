@@ -95,6 +95,22 @@ Output build nằm trong:
 dist
 ```
 
+## Chạy bằng Docker Compose
+
+Docker Compose nằm ở backend root:
+
+```powershell
+cd D:\Java\HCMCYU
+Copy-Item .env.example .env
+docker compose up --build
+```
+
+Compose sẽ build frontend từ folder `D:\Java\HCMCYU-frontend` và serve bằng Nginx tại:
+
+```text
+http://localhost:5173
+```
+
 ## Tài khoản demo
 
 Backend seed dev dùng password:
