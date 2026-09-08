@@ -1,0 +1,75 @@
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { AuthLayout } from '../layouts/AuthLayout';
+import { RoleLayout } from '../layouts/RoleLayout';
+import { ChatPage } from '../pages/ChatPage';
+import { DashboardPage } from '../pages/DashboardPage';
+import { EventDetailPage } from '../pages/events/EventDetailPage';
+import { EventListPage } from '../pages/events/EventListPage';
+import { LoginPage } from '../pages/LoginPage';
+import { MemberDetailPage } from '../pages/members/MemberDetailPage';
+import { MemberListPage } from '../pages/members/MemberListPage';
+import { NotificationPage } from '../pages/NotificationPage';
+import { PlaceholderPage } from '../pages/PlaceholderPage';
+import { PostDetailPage } from '../pages/posts/PostDetailPage';
+import { PostListPage } from '../pages/posts/PostListPage';
+import { ProfilePage } from '../pages/ProfilePage';
+import { RegisterPage } from '../pages/RegisterPage';
+import { ProtectedRoute } from './ProtectedRoute';
+import { RoleBasedRoute } from './RoleBasedRoute';
+
+export const router = createBrowserRouter([
+  {
+    element: <AuthLayout />,
+    children: [
+      { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
+    ],
+  },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <RoleLayout />,
+        children: [
+          { path: '/', element: <Navigate to="/dashboard" replace /> },
+          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/profile', element: <ProfilePage /> },
+          { path: '/events', element: <EventListPage /> },
+          { path: '/events/:id', element: <EventDetailPage /> },
+          { path: '/posts', element: <PostListPage /> },
+          { path: '/posts/:id', element: <PostDetailPage /> },
+          { path: '/chat', element: <ChatPage /> },
+          { path: '/notifications', element: <NotificationPage /> },
+          {
+            element: (
+              <RoleBasedRoute
+                allowedRoles={[
+                  'WARD_SECRETARY',
+                  'WARD_DEPUTY_SECRETARY',
+                  'TDP_SECRETARY',
+                  'TDP_DEPUTY_SECRETARY',
+                ]}
+              />
+            ),
+            children: [
+              { path: '/members', element: <MemberListPage /> },
+              { path: '/members/:id', element: <MemberDetailPage /> },
+            ],
+          },
+          {
+            element: <RoleBasedRoute allowedRoles={['WARD_SECRETARY', 'WARD_DEPUTY_SECRETARY']} />,
+            children: [
+              { path: '/organizations', element: <PlaceholderPage title="To dan pho" /> },
+            ],
+          },
+          {
+            element: <RoleBasedRoute allowedRoles={['WARD_SECRETARY']} />,
+            children: [
+              { path: '/audit-logs', element: <PlaceholderPage title="Audit va phan quyen" /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+]);

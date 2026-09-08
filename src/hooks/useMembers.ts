@@ -1,0 +1,150 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { memberService, type ProfileFormValues } from '../services/memberService';
+import type { BankingFormValues } from '../types/banking';
+import type { MemberFilters, MemberFormValues, MemberRole } from '../types/member';
+
+export const memberKeys = {
+  all: ['members'] as const,
+  me: () => [...memberKeys.all, 'me'] as const,
+  myBanking: () => [...memberKeys.all, 'me', 'banking'] as const,
+  banking: (id: string) => [...memberKeys.all, 'detail', id, 'banking'] as const,
+  list: (filters: MemberFilters) => [...memberKeys.all, 'list', filters] as const,
+  detail: (id: string) => [...memberKeys.all, 'detail', id] as const,
+};
+
+export const useMyProfile = () =>
+  useQuery({
+    queryKey: memberKeys.me(),
+    queryFn: memberService.me,
+  });
+
+export const useUpdateMyProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: ProfileFormValues) => memberService.updateMe(values),
+    onSuccess: (member) => {
+      queryClient.setQueryData(memberKeys.me(), member);
+      queryClient.invalidateQueries({ queryKey: memberKeys.all });
+    },
+  });
+};
+
+export const useUploadAvatar = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => memberService.uploadAvatar(file),
+    onSuccess: (member) => {
+      queryClient.setQueryData(memberKeys.me(), member);
+      queryClient.invalidateQueries({ queryKey: memberKeys.all });
+    },
+  });
+};
+
+export const useDeleteAvatar = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: memberService.deleteAvatar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: memberKeys.me() });
+      queryClient.invalidateQueries({ queryKey: memberKeys.all });
+    },
+  });
+};
+
+export const useMembers = (filters: MemberFilters) =>
+  useQuery({
+    queryKey: memberKeys.list(filters),
+    queryFn: () => memberService.list(filters),
+  });
+
+export const useMember = (id: string) =>
+  useQuery({
+    queryKey: memberKeys.detail(id),
+    queryFn: () => memberService.findById(id),
+    enabled: Boolean(id),
+  });
+
+export const useCreateMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: MemberFormValues) => memberService.create(values),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.all }),
+  });
+};
+
+export const useUpdateMember = (id: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: MemberFormValues) => memberService.update(id, values),
+    onSuccess: (member) => {
+      queryClient.invalidateQueries({ queryKey: memberKeys.all });
+      queryClient.setQueryData(memberKeys.detail(id), member);
+    },
+  });
+};
+
+export const useDisableMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => memberService.disable(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.all }),
+  });
+};
+
+export const useUpdateMemberRole = (id: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (role: MemberRole) => memberService.updateRole(id, role),
+    onSuccess: (member) => {
+      queryClient.invalidateQueries({ queryKey: memberKeys.all });
+      queryClient.setQueryData(memberKeys.detail(id), member);
+    },
+  });
+};
+
+export const useMyBanking = () =>
+  useQuery({
+    queryKey: memberKeys.myBanking(),
+    queryFn: memberService.myBanking,
+  });
+
+export const useMemberBanking = (id: string) =>
+  useQuery({
+    queryKey: memberKeys.banking(id),
+    queryFn: () => memberService.memberBanking(id),
+    enabled: Boolean(id),
+  });
+
+export const useUpdateMyBanking = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: BankingFormValues) => memberService.updateMyBanking(values),
+    onSuccess: (banking) => queryClient.setQueryData(memberKeys.myBanking(), banking),
+  });
+};
+
+export const useUploadBankQr = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => memberService.uploadBankQr(file),
+    onSuccess: (banking) => queryClient.setQueryData(memberKeys.myBanking(), banking),
+  });
+};
+
+export const useDeleteBankQr = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: memberService.deleteBankQr,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: memberKeys.myBanking() }),
+  });
+};
