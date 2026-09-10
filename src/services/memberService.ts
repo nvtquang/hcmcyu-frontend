@@ -1,7 +1,7 @@
 import { httpClient } from '../api/httpClient';
 import type { PageResponse } from '../types/api';
 import type { BankingFormValues, BankingInfo } from '../types/banking';
-import type { Member, MemberFilters, MemberFormValues, MemberRole } from '../types/member';
+import type { Member, MemberDirectoryItem, MemberFilters, MemberFormValues, MemberRole } from '../types/member';
 
 export type ProfileFormValues = {
   fullName: string;
@@ -90,6 +90,17 @@ export const memberService = {
         role: filters.role || undefined,
         page: filters.page,
         size: filters.size,
+        sort: 'fullName,asc',
+      },
+    });
+    return data;
+  },
+  directory: async (keyword: string, size = 10) => {
+    const { data } = await httpClient.get<PageResponse<MemberDirectoryItem>>('/api/members/directory', {
+      params: {
+        keyword: keyword || undefined,
+        page: 0,
+        size,
         sort: 'fullName,asc',
       },
     });

@@ -9,6 +9,7 @@ export const memberKeys = {
   myBanking: () => [...memberKeys.all, 'me', 'banking'] as const,
   banking: (id: string) => [...memberKeys.all, 'detail', id, 'banking'] as const,
   list: (filters: MemberFilters) => [...memberKeys.all, 'list', filters] as const,
+  directory: (keyword: string) => [...memberKeys.all, 'directory', keyword] as const,
   detail: (id: string) => [...memberKeys.all, 'detail', id] as const,
 };
 
@@ -58,6 +59,13 @@ export const useMembers = (filters: MemberFilters) =>
   useQuery({
     queryKey: memberKeys.list(filters),
     queryFn: () => memberService.list(filters),
+  });
+
+export const useMemberDirectory = (keyword: string, enabled = true) =>
+  useQuery({
+    queryKey: memberKeys.directory(keyword),
+    queryFn: () => memberService.directory(keyword),
+    enabled: enabled && keyword.trim().length >= 2,
   });
 
 export const useMember = (id: string) =>

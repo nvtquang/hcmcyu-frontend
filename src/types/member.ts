@@ -28,6 +28,14 @@ export type Member = {
   updatedAt?: string;
 };
 
+export type MemberDirectoryItem = {
+  id: string;
+  fullName: string;
+  organizationId: string;
+  organizationName?: string | null;
+  avatarUrl?: string | null;
+};
+
 export type MemberFormValues = {
   userId?: string;
   fullName: string;

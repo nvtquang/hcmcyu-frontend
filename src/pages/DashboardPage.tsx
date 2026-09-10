@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
-import { CalendarDays, FileText, MapPin, MessageCircle, UsersRound } from 'lucide-react';
-import { Card, EmptyState, LoadingSkeleton, PageHeader, StatusBadge } from '../components/ui';
+import { CalendarDays, FileText, MapPin, MessageCircle, Plus, UsersRound } from 'lucide-react';
+import { Card, EmptyState, LoadingSkeleton, PageHeader, StatusBadge, UserAvatar } from '../components/ui';
 import { useEvents } from '../hooks/useEvents';
 import { usePosts } from '../hooks/usePosts';
 import { eventService } from '../services/eventService';
 import { useAuth } from '../stores/AuthContext';
 import type { Event } from '../types/event';
 import type { Post } from '../types/post';
-import { eventStatusLabel, eventTypeLabel, postStatusLabel, postTypeLabel } from '../utils/labels';
+import { eventStatusLabel, eventTypeLabel, postStatusLabel, postTypeLabel, roleLabel } from '../utils/labels';
 import { formatDateTime } from '../utils/dateTime';
 
 const wardRoles = new Set(['WARD_SECRETARY', 'WARD_DEPUTY_SECRETARY']);
@@ -136,7 +136,7 @@ export const DashboardPage = () => {
   const isError = eventsQuery.isError || postsQuery.isError;
 
   return (
-    <div className="page-stack">
+    <div className="dashboard-feed-shell">
       <PageHeader
         eyebrow="Tổng quan"
         title="Bảng tin hoạt động"
@@ -157,45 +157,68 @@ export const DashboardPage = () => {
         }
       />
 
-      <Card className="feed-panel">
-        <div className="section-heading timeline-heading">
-          <div>
-            <h2>Bảng tin</h2>
-            <p className="page-description">Sự kiện và bài viết được gom về một dòng thời gian chung.</p>
-          </div>
-          <label className="compact-filter">
-            Sắp xếp
-            <select value={feedSort} onChange={(event) => setFeedSort(event.target.value as FeedSort)}>
-              <option value="newest">Mới nhất</option>
-              <option value="oldest">Lâu nhất</option>
-              <option value="engagement">Nhiều tương tác/tham gia nhất</option>
-            </select>
-          </label>
-        </div>
+      <div className={isWard ? 'feed-layout' : 'feed-layout feed-layout-readable'}>
+        <aside className="feed-rail">
+          <Card className="feed-profile-card">
+            <UserAvatar name={user?.username} size="md" />
+            <div>
+              <strong>{user?.username ?? 'HCMCYU'}</strong>
+              <span>{user?.role ? roleLabel[user.role] : 'Đoàn viên'}</span>
+            </div>
+          </Card>
+          <Card className="feed-filter-card">
+            <span>Sắp xếp bảng tin</span>
+            <button className={feedSort === 'newest' ? 'feed-sort active' : 'feed-sort'} type="button" onClick={() => setFeedSort('newest')}>
+              Mới nhất
+            </button>
+            <button className={feedSort === 'oldest' ? 'feed-sort active' : 'feed-sort'} type="button" onClick={() => setFeedSort('oldest')}>
+              Lâu nhất
+            </button>
+            <button className={feedSort === 'engagement' ? 'feed-sort active' : 'feed-sort'} type="button" onClick={() => setFeedSort('engagement')}>
+              Nhiều tương tác
+            </button>
+          </Card>
+        </aside>
 
-        {isLoading && <LoadingSkeleton rows={7} />}
-        {isError && <div className="error-box">Không thể tải bảng tin. Vui lòng thử lại sau.</div>}
-        {!isLoading && !isError && feed.length === 0 && <EmptyState title="Chưa có sự kiện hoặc bài viết" />}
+        <section className="feed-column">
+          <Card className="feed-composer">
+            <UserAvatar name={user?.username} size="sm" />
+            <div>
+              <strong>Bảng tin Phường Thượng Cát</strong>
+              <span>Sự kiện, thông báo và báo cáo hoạt động mới nhất</span>
+            </div>
+          </Card>
 
-        {!isLoading && !isError && feed.length > 0 && (
-          <div className="feed-list">
-            {feed.map((item) => (
-              <Link className="feed-item" key={item.id} to={item.to}>
-                <div className={`feed-icon feed-icon-${item.kind}`}>
-                  {item.kind === 'event' ? (
-                    <CalendarDays size={20} aria-hidden="true" />
-                  ) : (
-                    <FileText size={20} aria-hidden="true" />
-                  )}
-                </div>
-                <div className="feed-body">
-                  <div className="feed-meta">
-                    <span>{item.kind === 'event' ? 'Sự kiện' : 'Bài viết'}</span>
-                    <span>{item.meta}</span>
-                    {item.time && <span>{formatDateTime(item.time)}</span>}
+          {isLoading && <Card><LoadingSkeleton rows={7} /></Card>}
+          {isError && <div className="error-box">Không thể tải bảng tin. Vui lòng thử lại sau.</div>}
+          {!isLoading && !isError && feed.length === 0 && <EmptyState title="Chưa có sự kiện hoặc bài viết" />}
+
+          {!isLoading && !isError && feed.length > 0 && (
+            <div className="feed-list social-feed-list">
+              {feed.map((item) => (
+                <Link className="feed-item social-feed-item" key={item.id} to={item.to}>
+                  <div className="feed-card-header">
+                    <div className={`feed-icon feed-icon-${item.kind}`}>
+                      {item.kind === 'event' ? (
+                        <CalendarDays size={20} aria-hidden="true" />
+                      ) : (
+                        <FileText size={20} aria-hidden="true" />
+                      )}
+                    </div>
+                    <div>
+                      <strong>{item.kind === 'event' ? 'Sự kiện' : 'Bài viết'}</strong>
+                      <span>
+                        {item.meta}
+                        {item.time ? ` · ${formatDateTime(item.time)}` : ''}
+                      </span>
+                    </div>
                   </div>
-                  <h2>{item.title}</h2>
-                  {item.description && <p>{item.description}</p>}
+
+                  <div className="feed-body">
+                    <h2>{item.title}</h2>
+                    {item.description && <p>{item.description}</p>}
+                  </div>
+
                   <div className="feed-footer">
                     <StatusBadge value={item.status} label={item.statusLabel} />
                     {item.location && (
@@ -213,12 +236,28 @@ export const DashboardPage = () => {
                       {item.engagementLabel}
                     </span>
                   </div>
-                </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {isWard && (
+          <aside className="feed-rail feed-action-rail">
+            <Card className="feed-filter-card">
+              <span>Thao tác nhanh</span>
+              <Link className="feed-sort" to="/events">
+                <Plus size={15} aria-hidden="true" />
+                Tạo sự kiện
               </Link>
-            ))}
-          </div>
+              <Link className="feed-sort" to="/posts">
+                <Plus size={15} aria-hidden="true" />
+                Tạo bài viết
+              </Link>
+            </Card>
+          </aside>
         )}
-      </Card>
+      </div>
     </div>
   );
 };

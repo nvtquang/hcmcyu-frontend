@@ -3,6 +3,7 @@ import type { NavigationItem } from '../types/navigation';
 
 const wardSecretaryMenu: NavigationItem[] = [
   { to: '/dashboard', label: 'Tổng quan', icon: 'dashboard', group: 'overview' },
+  { to: '/profile', label: 'Hồ sơ', icon: 'profile', group: 'personal' },
   { to: '/members', label: 'Đoàn viên', icon: 'members', group: 'management' },
   { to: '/organizations', label: 'Tổ dân phố', icon: 'organizations', group: 'management' },
   { to: '/chat', label: 'Chat', icon: 'chat', group: 'personal' },
@@ -12,6 +13,7 @@ const wardSecretaryMenu: NavigationItem[] = [
 
 const wardDeputyMenu: NavigationItem[] = [
   { to: '/dashboard', label: 'Tổng quan', icon: 'dashboard', group: 'overview' },
+  { to: '/profile', label: 'Hồ sơ', icon: 'profile', group: 'personal' },
   { to: '/members', label: 'Đoàn viên', icon: 'members', group: 'management' },
   { to: '/organizations', label: 'Tổ dân phố', icon: 'organizations', group: 'management' },
   { to: '/chat', label: 'Chat', icon: 'chat', group: 'personal' },
@@ -21,6 +23,7 @@ const wardDeputyMenu: NavigationItem[] = [
 
 const tdpAdminMenu: NavigationItem[] = [
   { to: '/dashboard', label: 'Tổng quan', icon: 'dashboard', group: 'overview' },
+  { to: '/profile', label: 'Hồ sơ', icon: 'profile', group: 'personal' },
   { to: '/members', label: 'Đoàn viên TDP', icon: 'members', group: 'management' },
   { to: '/chat', label: 'Chat', icon: 'chat', group: 'personal' },
   { to: '/notifications', label: 'Thông báo', icon: 'notifications', group: 'personal' },
