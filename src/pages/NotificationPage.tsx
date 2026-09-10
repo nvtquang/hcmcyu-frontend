@@ -7,6 +7,7 @@ import {
   useUnreadNotifications,
 } from '../hooks/useNotifications';
 import type { Notification } from '../types/notification';
+import { EmptyState, LoadingSkeleton, PageHeader } from '../components/ui';
 import { toApiError } from '../utils/apiError';
 import { formatDateTime } from '../utils/dateTime';
 
@@ -96,25 +97,26 @@ export const NotificationPage = () => {
 
   return (
     <div className="page-stack">
-      <header className="page-header">
-        <div>
-          <h1 className="page-title">Thông báo</h1>
-          <p className="page-description">{unreadText}</p>
-        </div>
-        <button
-          className="secondary-button inline-button"
-          type="button"
-          disabled={(unreadQuery.data?.count ?? 0) === 0 || markAllRead.isPending}
-          onClick={handleMarkAllRead}
-        >
-          Đánh dấu tất cả đã đọc
-        </button>
-      </header>
+      <PageHeader
+        eyebrow="Cá nhân"
+        title="Thông báo"
+        description={unreadText}
+        actions={
+          <button
+            className="secondary-button inline-button"
+            type="button"
+            disabled={(unreadQuery.data?.count ?? 0) === 0 || markAllRead.isPending}
+            onClick={handleMarkAllRead}
+          >
+            Đánh dấu tất cả đã đọc
+          </button>
+        }
+      />
 
       {error && <div className="error-box">{error}</div>}
 
       <section className="surface notification-list">
-        {notificationsQuery.isLoading && <p>Đang tải thông báo...</p>}
+        {notificationsQuery.isLoading && <LoadingSkeleton rows={6} />}
 
         {notifications.map((notification) => {
           const path = referencePath(notification);
@@ -147,7 +149,7 @@ export const NotificationPage = () => {
           );
         })}
 
-        {!notificationsQuery.isLoading && notifications.length === 0 && <p>Chưa có thông báo.</p>}
+        {!notificationsQuery.isLoading && notifications.length === 0 && <EmptyState title="Chưa có thông báo" />}
       </section>
 
       <div className="pagination">

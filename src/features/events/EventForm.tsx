@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Event, EventFormValues, EventStatus, EventType } from '../../types/event';
 import type { OrganizationUnit } from '../../types/organization';
+import { eventStatusLabel, eventTypeLabel } from '../../utils/labels';
 import { toDateTimeLocalValue } from '../../utils/dateTime';
 
 type EventFormProps = {
@@ -76,7 +77,7 @@ export const EventForm = ({
         <select value={values.type} onChange={(event) => updateField('type', event.target.value)}>
           {eventTypes.map((type) => (
             <option key={type} value={type}>
-              {type}
+              {eventTypeLabel[type]}
             </option>
           ))}
         </select>
@@ -144,7 +145,7 @@ export const EventForm = ({
         <select value={values.status} onChange={(event) => updateField('status', event.target.value)}>
           {eventStatuses.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {eventStatusLabel[status]}
             </option>
           ))}
         </select>
@@ -166,4 +167,3 @@ export const EventForm = ({
     </form>
   );
 };
-

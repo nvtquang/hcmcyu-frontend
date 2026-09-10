@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import type { Member, MemberFormValues, MemberRole } from '../../types/member';
 import type { OrganizationUnit } from '../../types/organization';
+import { roleLabel } from '../../utils/labels';
 
 type RoleAssignmentFormProps = {
   member: Member;
@@ -16,14 +17,6 @@ const assignableRoles: MemberRole[] = [
   'TDP_DEPUTY_SECRETARY',
   'WARD_DEPUTY_SECRETARY',
 ];
-
-const roleLabels: Record<MemberRole, string> = {
-  WARD_SECRETARY: 'Bí thư phường',
-  WARD_DEPUTY_SECRETARY: 'Phó bí thư phường',
-  TDP_SECRETARY: 'Bí thư TDP',
-  TDP_DEPUTY_SECRETARY: 'Phó bí thư TDP',
-  MEMBER: 'Đoàn viên',
-};
 
 const requiresTdp = (role: MemberRole) => role === 'TDP_SECRETARY' || role === 'TDP_DEPUTY_SECRETARY';
 
@@ -64,7 +57,7 @@ export const RoleAssignmentForm = ({
 
     const nextOrganizationId = requiresTdp(selectedRole) ? selectedOrganizationId : member.organizationId;
     const confirmed = window.confirm(
-      `Xác nhận phân quyền ${member.fullName} thành ${roleLabels[selectedRole]}?`,
+      `Xác nhận phân quyền ${member.fullName} thành ${roleLabel[selectedRole]}?`,
     );
 
     if (confirmed) {
@@ -79,7 +72,7 @@ export const RoleAssignmentForm = ({
         <select value={selectedRole} onChange={(event) => setSelectedRole(event.target.value as MemberRole)}>
           {assignableRoles.map((role) => (
             <option key={role} value={role}>
-              {roleLabels[role]}
+              {roleLabel[role]}
             </option>
           ))}
         </select>

@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Member, MemberFormValues, MemberStatus } from '../../types/member';
 import type { OrganizationUnit } from '../../types/organization';
+import { memberStatusLabel } from '../../utils/labels';
 
 type MemberFormProps = {
   initialValue?: Member;
@@ -142,7 +143,7 @@ export const MemberForm = ({
         >
           {statusOptions.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {memberStatusLabel[status]}
             </option>
           ))}
         </select>
@@ -188,4 +189,3 @@ export const MemberForm = ({
     </form>
   );
 };
-

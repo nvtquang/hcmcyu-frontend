@@ -20,7 +20,7 @@ export const LoginPage = () => {
       const destination = typeof location.state?.from?.pathname === 'string' ? location.state.from.pathname : '/dashboard';
       navigate(destination, { replace: true });
     } catch (caught) {
-      setError(toApiError(caught).message ?? 'Dang nhap khong thanh cong');
+      setError(toApiError(caught).message ?? 'Đăng nhập không thành công');
     }
   };
 
@@ -30,10 +30,12 @@ export const LoginPage = () => {
 
   return (
     <>
-      <h1 className="page-title">Dang nhap</h1>
-      <form className="form-stack" onSubmit={onSubmit}>
+      <p className="page-eyebrow">HCMCYU Thượng Cát</p>
+      <h1 className="page-title">Đăng nhập hệ thống</h1>
+      <p className="page-description">Quản lý đoàn viên, sự kiện, thông báo và hoạt động Đoàn.</p>
+      <form className="form-stack section-gap" onSubmit={onSubmit}>
         <label>
-          Tai khoan hoac email
+          Tài khoản hoặc email
           <input
             autoComplete="username"
             required
@@ -42,7 +44,7 @@ export const LoginPage = () => {
           />
         </label>
         <label>
-          Mat khau
+          Mật khẩu
           <input
             autoComplete="current-password"
             required
@@ -53,9 +55,11 @@ export const LoginPage = () => {
         </label>
         {error && <div className="error-box">{error}</div>}
         <button className="primary-button" type="submit" disabled={isLoading}>
-          Dang nhap
+          Đăng nhập
         </button>
-        <Link to="/register">Tao tai khoan doan vien</Link>
+        <Link className="text-action" to="/register">
+          Tạo tài khoản đoàn viên
+        </Link>
       </form>
     </>
   );

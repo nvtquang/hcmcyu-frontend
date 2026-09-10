@@ -25,6 +25,9 @@ export type LoginRequest = {
 
 export type RegisterRequest = {
   username: string;
+  fullName: string;
   email: string;
   password: string;
+  phone?: string;
+  organizationId: string;
 };

@@ -14,11 +14,18 @@ import {
 } from '../hooks/useMembers';
 import type { ProfileFormValues } from '../services/memberService';
 import type { BankingFormValues } from '../types/banking';
+import { Card, LoadingSkeleton, PageHeader, StatusBadge } from '../components/ui';
+import { memberStatusLabel, roleLabel } from '../utils/labels';
 import { toApiError } from '../utils/apiError';
+import { useAuth } from '../stores/AuthContext';
+
+const memberOnlyBankingRoles = new Set(['MEMBER']);
 
 export const ProfilePage = () => {
+  const { role } = useAuth();
+  const canEditBanking = Boolean(role && memberOnlyBankingRoles.has(role));
   const profileQuery = useMyProfile();
-  const bankingQuery = useMyBanking();
+  const bankingQuery = useMyBanking(canEditBanking);
   const updateProfile = useUpdateMyProfile();
   const uploadAvatar = useUploadAvatar();
   const deleteAvatar = useDeleteAvatar();
@@ -83,54 +90,84 @@ export const ProfilePage = () => {
   };
 
   if (profileQuery.isLoading) {
-    return <section className="surface">Đang tải hồ sơ...</section>;
+    return (
+      <Card>
+        <LoadingSkeleton rows={5} />
+      </Card>
+    );
   }
 
   if (profileQuery.error || !profileQuery.data) {
     return <section className="error-box">{toApiError(profileQuery.error).message ?? 'Không thể tải hồ sơ'}</section>;
   }
 
+  const member = profileQuery.data;
+
   return (
-    <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Hồ sơ cá nhân</h1>
-          <p className="page-description">Thông tin phân quyền, TDP và trạng thái không được chỉnh sửa tại đây.</p>
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        eyebrow="Cá nhân"
+        title="Hồ sơ cá nhân"
+        description="Thông tin phân quyền, TDP và trạng thái được quản lý bởi cán bộ có thẩm quyền."
+      />
 
       {profileError && <section className="error-box">{profileError}</section>}
 
       <AvatarSection
-        member={profileQuery.data}
+        member={member}
         isUploading={uploadAvatar.isPending}
         isDeleting={deleteAvatar.isPending}
         onUpload={handleAvatarUpload}
         onDelete={handleAvatarDelete}
       />
 
-      <section className="surface section-gap">
-        <h2>Thông tin cá nhân</h2>
-        <ProfileForm
-          member={profileQuery.data}
-          isSubmitting={updateProfile.isPending}
-          onSubmit={handleProfileSave}
-        />
-      </section>
+      <Card>
+        <div className="section-heading">
+          <h2>Thông tin Đoàn</h2>
+        </div>
+        <div className="detail-grid">
+          <div>
+            <span>Tổ dân phố</span>
+            <strong>{member.organizationName || member.organizationId}</strong>
+          </div>
+          <div>
+            <span>Trạng thái</span>
+            <strong>
+              <StatusBadge value={member.memberStatus} label={memberStatusLabel[member.memberStatus]} />
+            </strong>
+          </div>
+          <div>
+            <span>Vai trò</span>
+            <strong>{roleLabel[member.memberRole] ?? member.memberRole}</strong>
+          </div>
+          <div>
+            <span>Ngày vào Đoàn</span>
+            <strong>{member.youthUnionJoinDate || '-'}</strong>
+          </div>
+        </div>
+      </Card>
 
-      <BankingSection
-        banking={bankingQuery.data}
-        errorMessage={bankingError || (bankingQuery.error ? toApiError(bankingQuery.error).message : null)}
-        isEditable
-        isLoading={bankingQuery.isLoading}
-        isSaving={updateBanking.isPending}
-        isUploading={uploadBankQr.isPending}
-        isDeleting={deleteBankQr.isPending}
-        onSave={handleBankingSave}
-        onUploadQr={handleQrUpload}
-        onDeleteQr={handleQrDelete}
-      />
-    </>
+      <Card>
+        <div className="section-heading">
+          <h2>Thông tin cá nhân</h2>
+        </div>
+        <ProfileForm member={member} isSubmitting={updateProfile.isPending} onSubmit={handleProfileSave} />
+      </Card>
+
+      {canEditBanking && (
+        <BankingSection
+          banking={bankingQuery.data}
+          errorMessage={bankingError || (bankingQuery.error ? toApiError(bankingQuery.error).message : null)}
+          isEditable
+          isLoading={bankingQuery.isLoading}
+          isSaving={updateBanking.isPending}
+          isUploading={uploadBankQr.isPending}
+          isDeleting={deleteBankQr.isPending}
+          onSave={handleBankingSave}
+          onUploadQr={handleQrUpload}
+          onDeleteQr={handleQrDelete}
+        />
+      )}
+    </div>
   );
 };
-

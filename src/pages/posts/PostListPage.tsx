@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Eye, FilePlus, Pencil } from 'lucide-react';
 import { ForbiddenMessage } from '../../components/ForbiddenMessage';
+import { EmptyState, LoadingSkeleton, PageHeader, StatusBadge } from '../../components/ui';
 import { PostForm } from '../../features/posts/PostForm';
 import { useCreatePost, useDeletePost, usePosts } from '../../hooks/usePosts';
 import { useOrganizations } from '../../hooks/useOrganizations';
@@ -9,15 +11,12 @@ import type { ApiError } from '../../types/api';
 import type { PostFilters, PostFormValues, PostType } from '../../types/post';
 import type { OrganizationUnit } from '../../types/organization';
 import { formatDateTime } from '../../utils/dateTime';
+import { postStatusLabel, postTypeLabel } from '../../utils/labels';
 import { toApiError } from '../../utils/apiError';
 
 const pageSize = 10;
 
-const isOfficer = (role: string | null) =>
-  role === 'WARD_SECRETARY' ||
-  role === 'WARD_DEPUTY_SECRETARY' ||
-  role === 'TDP_SECRETARY' ||
-  role === 'TDP_DEPUTY_SECRETARY';
+const canManagePosts = (role: string | null) => role === 'WARD_SECRETARY' || role === 'WARD_DEPUTY_SECRETARY';
 
 const getVisibleOrganizations = (
   organizations: OrganizationUnit[],
@@ -49,7 +48,7 @@ export const PostListPage = () => {
   );
   const fixedOrganizationId =
     role === 'TDP_SECRETARY' || role === 'TDP_DEPUTY_SECRETARY' ? user?.tdpId : undefined;
-  const canManage = isOfficer(role);
+  const canManage = canManagePosts(role);
 
   const filters: PostFilters = {
     organization: fixedOrganizationId ?? organization,
@@ -97,29 +96,30 @@ export const PostListPage = () => {
 
   return (
     <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Bài viết</h1>
-          <p className="page-description">
-            Member chỉ thấy nội dung publish. Cán bộ quản lý theo phạm vi tổ chức.
-          </p>
-        </div>
-        {canManage && (
-          <button className="primary-button inline-button" type="button" onClick={() => setIsCreateOpen(true)}>
-            Tạo bài viết
-          </button>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Bài viết và báo cáo"
+        title="Bài viết"
+        description="Đoàn viên chỉ thấy nội dung đã xuất bản. Cán bộ quản lý theo phạm vi tổ chức."
+        actions={
+          canManage && (
+            <button className="primary-button inline-button" type="button" onClick={() => setIsCreateOpen(true)}>
+              <FilePlus size={17} aria-hidden="true" />
+              Tạo bài viết
+            </button>
+          )
+        }
+      />
 
       <section className="surface toolbar">
         <label>
           Loại bài
           <select value={type} onChange={(event) => { setType(event.target.value as PostType | ''); setPage(0); }}>
             <option value="">Tất cả</option>
-            <option value="NEWS">NEWS</option>
-            <option value="ANNOUNCEMENT">ANNOUNCEMENT</option>
-            <option value="ACTIVITY_REPORT">ACTIVITY_REPORT</option>
-            <option value="OTHER">OTHER</option>
+            {(Object.keys(postTypeLabel) as PostType[]).map((item) => (
+              <option key={item} value={item}>
+                {postTypeLabel[item]}
+              </option>
+            ))}
           </select>
         </label>
         <label>
@@ -148,7 +148,9 @@ export const PostListPage = () => {
 
       {isCreateOpen && (
         <section className="surface section-gap">
-          <h2>Tạo bài viết</h2>
+          <div className="section-heading">
+            <h2>Tạo bài viết</h2>
+          </div>
           <PostForm
             organizations={organizations}
             fixedOrganizationId={fixedOrganizationId}
@@ -161,19 +163,27 @@ export const PostListPage = () => {
       )}
 
       <section className="event-grid section-gap">
-        {postsQuery.isLoading && <div className="surface">Đang tải bài viết...</div>}
-        {!postsQuery.isLoading && posts.length === 0 && <div className="surface">Không có bài viết.</div>}
+        {postsQuery.isLoading && (
+          <div className="surface">
+            <LoadingSkeleton rows={4} />
+          </div>
+        )}
+        {!postsQuery.isLoading && posts.length === 0 && (
+          <div className="surface">
+            <EmptyState title="Không có bài viết" description="Thử thay đổi bộ lọc hoặc ngày đăng." />
+          </div>
+        )}
         {posts.map((post) => (
           <article className="surface event-card" key={post.id}>
             <div>
-              <span className="pill">{post.type}</span>
+              <StatusBadge value={post.status} label={postStatusLabel[post.status]} />
               <h2>{post.title}</h2>
               <p>{post.content.slice(0, 160)}{post.content.length > 160 ? '...' : ''}</p>
             </div>
             <dl className="compact-list">
               <div>
-                <dt>Trạng thái</dt>
-                <dd>{post.status}</dd>
+                <dt>Loại bài</dt>
+                <dd>{postTypeLabel[post.type]}</dd>
               </div>
               <div>
                 <dt>TDP</dt>
@@ -190,11 +200,13 @@ export const PostListPage = () => {
             </dl>
             <div className="table-actions">
               <Link className="text-action" to={`/posts/${post.id}`}>
+                <Eye size={16} aria-hidden="true" />
                 Xem
               </Link>
               {canManage && (
                 <>
                   <Link className="text-action" to={`/posts/${post.id}?mode=edit`}>
+                    <Pencil size={16} aria-hidden="true" />
                     Sửa
                   </Link>
                   <button className="danger-link" type="button" onClick={() => handleDelete(post.id)}>
@@ -231,4 +243,3 @@ export const PostListPage = () => {
     </>
   );
 };
-

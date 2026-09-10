@@ -109,10 +109,11 @@ export const useUpdateMemberRole = (id: string) => {
   });
 };
 
-export const useMyBanking = () =>
+export const useMyBanking = (enabled = true) =>
   useQuery({
     queryKey: memberKeys.myBanking(),
     queryFn: memberService.myBanking,
+    enabled,
   });
 
 export const useMemberBanking = (id: string) =>

@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Pencil, Upload } from 'lucide-react';
 import { ForbiddenMessage } from '../../components/ForbiddenMessage';
+import { Card, EmptyState, LoadingSkeleton, PageHeader, StatusBadge } from '../../components/ui';
 import { PostForm } from '../../features/posts/PostForm';
 import { useDeletePost, useDeletePostImage, usePost, useUpdatePost, useUploadPostImages } from '../../hooks/usePosts';
 import { useOrganizations } from '../../hooks/useOrganizations';
@@ -9,13 +11,10 @@ import type { ApiError } from '../../types/api';
 import type { PostFormValues } from '../../types/post';
 import { resolveAssetUrl } from '../../utils/assetUrl';
 import { formatDateTime } from '../../utils/dateTime';
+import { postStatusLabel, postTypeLabel } from '../../utils/labels';
 import { toApiError } from '../../utils/apiError';
 
-const isOfficer = (role: string | null) =>
-  role === 'WARD_SECRETARY' ||
-  role === 'WARD_DEPUTY_SECRETARY' ||
-  role === 'TDP_SECRETARY' ||
-  role === 'TDP_DEPUTY_SECRETARY';
+const canManagePosts = (role: string | null) => role === 'WARD_SECRETARY' || role === 'WARD_DEPUTY_SECRETARY';
 
 const isTdpOfficer = (role: string | null) => role === 'TDP_SECRETARY' || role === 'TDP_DEPUTY_SECRETARY';
 
@@ -28,7 +27,7 @@ export const PostDetailPage = () => {
   const [formError, setFormError] = useState<ApiError | null>(null);
   const [openImageUrl, setOpenImageUrl] = useState<string | null>(null);
   const isEditing = searchParams.get('mode') === 'edit';
-  const canManage = isOfficer(role);
+  const canManage = canManagePosts(role);
 
   const postQuery = usePost(id);
   const organizationsQuery = useOrganizations();
@@ -104,7 +103,11 @@ export const PostDetailPage = () => {
   }
 
   if (postQuery.isLoading) {
-    return <section className="surface">Đang tải bài viết...</section>;
+    return (
+      <Card>
+        <LoadingSkeleton rows={5} />
+      </Card>
+    );
   }
 
   if (!postQuery.data) {
@@ -114,41 +117,44 @@ export const PostDetailPage = () => {
   const post = postQuery.data;
 
   return (
-    <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">{post.title}</h1>
-          <p className="page-description">
-            {post.type} · {post.status} · {formatDateTime(post.createdAt)}
-          </p>
-        </div>
-        <div className="header-actions">
-          <Link className="secondary-button inline-button" to="/posts">
-            Quay lại
-          </Link>
-          {canManage && (
-            <>
-              <button
-                className="primary-button inline-button"
-                type="button"
-                onClick={() => setSearchParams(isEditing ? {} : { mode: 'edit' })}
-              >
-                {isEditing ? 'Xem chi tiết' : 'Sửa'}
-              </button>
-              <button className="secondary-button inline-button" type="button" onClick={handleDelete}>
-                Xóa
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        eyebrow={postTypeLabel[post.type]}
+        title={post.title}
+        description={`${postStatusLabel[post.status]} · ${formatDateTime(post.createdAt)}`}
+        actions={
+          <>
+            <Link className="secondary-button inline-button" to="/posts">
+              <ArrowLeft size={17} aria-hidden="true" />
+              Quay lại
+            </Link>
+            {canManage && (
+              <>
+                <button
+                  className="primary-button inline-button"
+                  type="button"
+                  onClick={() => setSearchParams(isEditing ? {} : { mode: 'edit' })}
+                >
+                  <Pencil size={17} aria-hidden="true" />
+                  {isEditing ? 'Xem chi tiết' : 'Sửa'}
+                </button>
+                <button className="secondary-button inline-button" type="button" onClick={handleDelete}>
+                  Xóa
+                </button>
+              </>
+            )}
+          </>
+        }
+      />
 
       {formError?.status === 403 && <ForbiddenMessage />}
       {formError && formError.status !== 403 && <section className="error-box">{formError.message}</section>}
 
       {isEditing && canManage ? (
-        <section className="surface">
-          <h2>Sửa bài viết</h2>
+        <Card>
+          <div className="section-heading">
+            <h2>Sửa bài viết</h2>
+          </div>
           <PostForm
             initialValue={post}
             organizations={organizations}
@@ -158,15 +164,15 @@ export const PostDetailPage = () => {
             onSubmit={handleUpdate}
             onCancel={() => setSearchParams({})}
           />
-        </section>
+        </Card>
       ) : (
         <article className="surface post-body">
-          <div className="pill">{post.type}</div>
+          <StatusBadge value={post.status} label={postStatusLabel[post.status]} />
           <p>{post.content}</p>
         </article>
       )}
 
-      <section className="surface section-gap">
+      <Card>
         <div className="section-heading">
           <div>
             <h2>Ảnh bài viết</h2>
@@ -188,6 +194,7 @@ export const PostDetailPage = () => {
                 disabled={uploadImages.isPending}
                 onClick={() => fileInputRef.current?.click()}
               >
+                <Upload size={17} aria-hidden="true" />
                 Upload ảnh
               </button>
             </>
@@ -212,9 +219,9 @@ export const PostDetailPage = () => {
               </div>
             );
           })}
-          {(post.images ?? []).length === 0 && <p>Chưa có ảnh.</p>}
+          {(post.images ?? []).length === 0 && <EmptyState title="Chưa có ảnh" />}
         </div>
-      </section>
+      </Card>
 
       {openImageUrl && (
         <div className="modal-backdrop" role="presentation" onClick={() => setOpenImageUrl(null)}>
@@ -226,7 +233,6 @@ export const PostDetailPage = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
-

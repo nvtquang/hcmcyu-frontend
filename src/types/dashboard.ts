@@ -1,4 +1,4 @@
-import type { Event, EventParticipation } from './event';
+import type { Event } from './event';
 import type { Post } from './post';
 
 export type OrganizationMemberCount = {
@@ -18,7 +18,7 @@ export type EventDashboardSummary = {
   upcomingEventCount: number;
   registeredParticipantCount: number;
   upcomingEvents: Event[];
-  registeredEvents: EventParticipation[];
+  registeredEvents: Event[];
 };
 
 export type ContentDashboardSummary = {

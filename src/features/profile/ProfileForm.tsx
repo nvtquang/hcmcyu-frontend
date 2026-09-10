@@ -99,4 +99,3 @@ export const ProfileForm = ({ member, isSubmitting, onSubmit }: ProfileFormProps
     </form>
   );
 };
-

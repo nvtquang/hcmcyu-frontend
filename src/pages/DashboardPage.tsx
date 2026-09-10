@@ -1,225 +1,224 @@
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDashboardSummary } from '../hooks/useDashboard';
+import { useQueries } from '@tanstack/react-query';
+import { CalendarDays, FileText, MapPin, MessageCircle, UsersRound } from 'lucide-react';
+import { Card, EmptyState, LoadingSkeleton, PageHeader, StatusBadge } from '../components/ui';
+import { useEvents } from '../hooks/useEvents';
+import { usePosts } from '../hooks/usePosts';
+import { eventService } from '../services/eventService';
 import { useAuth } from '../stores/AuthContext';
 import type { Event } from '../types/event';
 import type { Post } from '../types/post';
+import { eventStatusLabel, eventTypeLabel, postStatusLabel, postTypeLabel } from '../utils/labels';
 import { formatDateTime } from '../utils/dateTime';
 
-const officerRoles = new Set(['WARD_SECRETARY', 'WARD_DEPUTY_SECRETARY', 'TDP_SECRETARY', 'TDP_DEPUTY_SECRETARY']);
+const wardRoles = new Set(['WARD_SECRETARY', 'WARD_DEPUTY_SECRETARY']);
 
-const StatCard = ({ label, value, to }: { label: string; value: number | string; to?: string }) => {
-  const content = (
-    <>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </>
-  );
+type FeedSort = 'newest' | 'oldest' | 'engagement';
 
-  return to ? (
-    <Link className="surface stat-card" to={to}>
-      {content}
-    </Link>
-  ) : (
-    <div className="surface stat-card">{content}</div>
-  );
+type FeedItem = {
+  id: string;
+  kind: 'event' | 'post';
+  title: string;
+  description?: string | null;
+  meta: string;
+  location?: string | null;
+  time?: string;
+  to: string;
+  status: string;
+  statusLabel: string;
+  engagement: number;
+  engagementLabel: string;
 };
 
-const EmptyText = ({ children }: { children: string }) => <p className="muted-text">{children}</p>;
+const getPostEngagement = (post: Post) => {
+  const maybePost = post as Post & {
+    interactionCount?: number;
+    viewCount?: number;
+    commentCount?: number;
+    reactionCount?: number;
+  };
 
-const EventTable = ({ events }: { events: Event[] }) => (
-  <div className="table-wrap">
-    <table className="data-table compact-table">
-      <thead>
-        <tr>
-          <th>Sự kiện</th>
-          <th>Loại</th>
-          <th>Thời gian</th>
-          <th>Địa điểm</th>
-        </tr>
-      </thead>
-      <tbody>
-        {events.map((event) => (
-          <tr key={event.id}>
-            <td>
-              <Link className="text-action" to={`/events/${event.id}`}>
-                {event.title}
-              </Link>
-            </td>
-            <td>{event.type}</td>
-            <td>{formatDateTime(event.startTime)}</td>
-            <td>{event.location ?? '-'}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+  return maybePost.interactionCount ?? maybePost.reactionCount ?? maybePost.commentCount ?? maybePost.viewCount ?? 0;
+};
 
-const PostList = ({ posts }: { posts: Post[] }) => (
-  <div className="dashboard-list">
-    {posts.map((post) => (
-      <Link className="dashboard-list-item" to={`/posts/${post.id}`} key={post.id}>
-        <div>
-          <strong>{post.title}</strong>
-          <span>{post.type} · {post.organizationId}</span>
-        </div>
-        <span>{formatDateTime(post.createdAt)}</span>
-      </Link>
-    ))}
-  </div>
-);
+const buildFeed = (
+  events: Event[],
+  posts: Post[],
+  eventParticipationCounts: Record<string, number>,
+  sort: FeedSort,
+): FeedItem[] => {
+  const items: FeedItem[] = [
+    ...events.map((event) => {
+      const goingCount = eventParticipationCounts[event.id] ?? 0;
+
+      return {
+        id: `event-${event.id}`,
+        kind: 'event' as const,
+        title: event.title,
+        description: event.description,
+        meta: eventTypeLabel[event.type],
+        location: event.location,
+        time: event.startTime,
+        to: `/events/${event.id}`,
+        status: event.status,
+        statusLabel: eventStatusLabel[event.status],
+        engagement: goingCount,
+        engagementLabel: `${goingCount} lượt tham gia`,
+      };
+    }),
+    ...posts.map((post) => {
+      const engagement = getPostEngagement(post);
+
+      return {
+        id: `post-${post.id}`,
+        kind: 'post' as const,
+        title: post.title,
+        description: post.content,
+        meta: postTypeLabel[post.type],
+        time: post.createdAt,
+        to: `/posts/${post.id}`,
+        status: post.status,
+        statusLabel: postStatusLabel[post.status],
+        engagement,
+        engagementLabel: `${engagement} lượt tương tác`,
+      };
+    }),
+  ];
+
+  return items.sort((left, right) => {
+    if (sort === 'engagement') {
+      const engagementDiff = right.engagement - left.engagement;
+      if (engagementDiff !== 0) {
+        return engagementDiff;
+      }
+    }
+
+    const leftTime = left.time ? new Date(left.time).getTime() : 0;
+    const rightTime = right.time ? new Date(right.time).getTime() : 0;
+    return sort === 'oldest' ? leftTime - rightTime : rightTime - leftTime;
+  });
+};
 
 export const DashboardPage = () => {
   const { user } = useAuth();
-  const dashboardQuery = useDashboardSummary();
-  const summary = dashboardQuery.data;
-  const isOfficer = Boolean(user?.role && officerRoles.has(user.role));
-  const isWard = user?.role === 'WARD_SECRETARY' || user?.role === 'WARD_DEPUTY_SECRETARY';
-  const maxTdpCount = Math.max(...(summary?.member.membersByTdp.map((item) => item.count) ?? [0]), 1);
-  const maxStatusCount = Math.max(...Object.values(summary?.member.memberStatusCounts ?? { empty: 0 }), 1);
+  const [feedSort, setFeedSort] = useState<FeedSort>('newest');
+  const eventsQuery = useEvents({ page: 0, size: 40, upcoming: false });
+  const postsQuery = usePosts({ page: 0, size: 40 });
+  const events = eventsQuery.data?.content ?? [];
+  const posts = postsQuery.data?.content ?? [];
+  const isWard = Boolean(user?.role && wardRoles.has(user.role));
 
-  if (dashboardQuery.isLoading) {
-    return <div className="surface">Đang tải dashboard...</div>;
-  }
+  const participationQueries = useQueries({
+    queries: events.map((event) => ({
+      queryKey: ['events', 'dashboard-feed', event.id, 'participation-summary'] as const,
+      queryFn: () => eventService.participationSummary(event.id),
+      enabled: Boolean(event.id),
+      staleTime: 60_000,
+    })),
+  });
 
-  if (dashboardQuery.isError || !summary) {
-    return <div className="error-box">Không thể tải dashboard. Vui lòng thử lại sau.</div>;
-  }
+  const eventParticipationCounts = useMemo(
+    () =>
+      events.reduce<Record<string, number>>((accumulator, event, index) => {
+        accumulator[event.id] = participationQueries[index]?.data?.going ?? 0;
+        return accumulator;
+      }, {}),
+    [events, participationQueries],
+  );
+
+  const feed = useMemo(
+    () => buildFeed(events, posts, eventParticipationCounts, feedSort),
+    [eventParticipationCounts, events, posts, feedSort],
+  );
+
+  const isLoading = eventsQuery.isLoading || postsQuery.isLoading;
+  const isError = eventsQuery.isError || postsQuery.isError;
 
   return (
     <div className="page-stack">
-      <header className="page-header">
-        <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-description">
-            {isOfficer ? (isWard ? 'Tổng hợp toàn phường' : 'Tổng hợp theo phạm vi TDP') : 'Thông tin cá nhân của đoàn viên'}
-          </p>
+      <PageHeader
+        eyebrow="Tổng quan"
+        title="Bảng tin hoạt động"
+        description="Dòng thời gian sự kiện và bài viết theo phạm vi dữ liệu backend cho phép."
+        actions={
+          isWard && (
+            <>
+              <Link className="secondary-button inline-button" to="/events">
+                <CalendarDays size={17} aria-hidden="true" />
+                Quản lý sự kiện
+              </Link>
+              <Link className="secondary-button inline-button" to="/posts">
+                <FileText size={17} aria-hidden="true" />
+                Quản lý bài viết
+              </Link>
+            </>
+          )
+        }
+      />
+
+      <Card className="feed-panel">
+        <div className="section-heading timeline-heading">
+          <div>
+            <h2>Bảng tin</h2>
+            <p className="page-description">Sự kiện và bài viết được gom về một dòng thời gian chung.</p>
+          </div>
+          <label className="compact-filter">
+            Sắp xếp
+            <select value={feedSort} onChange={(event) => setFeedSort(event.target.value as FeedSort)}>
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Lâu nhất</option>
+              <option value="engagement">Nhiều tương tác/tham gia nhất</option>
+            </select>
+          </label>
         </div>
-      </header>
 
-      {isOfficer ? (
-        <>
-          <section className="dashboard-stat-grid">
-            <StatCard label="Tổng đoàn viên" value={summary.member.totalMembers} to="/members" />
-            <StatCard label="Cán bộ Đoàn" value={summary.member.officerCount} />
-            <StatCard label="Sự kiện sắp tới" value={summary.event.upcomingEventCount} to="/events" />
-            <StatCard label="Activity report mới" value={summary.content.recentActivityReportCount} to="/posts" />
-            <StatCard label="Lượt đăng ký event" value={summary.event.registeredParticipantCount} />
-            <StatCard label="Thông báo chưa đọc" value={summary.notification.count} to="/notifications" />
-          </section>
+        {isLoading && <LoadingSkeleton rows={7} />}
+        {isError && <div className="error-box">Không thể tải bảng tin. Vui lòng thử lại sau.</div>}
+        {!isLoading && !isError && feed.length === 0 && <EmptyState title="Chưa có sự kiện hoặc bài viết" />}
 
-          <section className="dashboard-grid">
-            <div className="surface">
-              <div className="section-heading">
-                <h2>Đoàn viên theo TDP</h2>
-              </div>
-              <div className="bar-chart">
-                {summary.member.membersByTdp.map((item) => (
-                  <div className="bar-row" key={item.organizationId}>
-                    <span>{item.organizationName}</span>
-                    <div>
-                      <i style={{ width: `${(item.count / maxTdpCount) * 100}%` }} />
-                    </div>
-                    <strong>{item.count}</strong>
+        {!isLoading && !isError && feed.length > 0 && (
+          <div className="feed-list">
+            {feed.map((item) => (
+              <Link className="feed-item" key={item.id} to={item.to}>
+                <div className={`feed-icon feed-icon-${item.kind}`}>
+                  {item.kind === 'event' ? (
+                    <CalendarDays size={20} aria-hidden="true" />
+                  ) : (
+                    <FileText size={20} aria-hidden="true" />
+                  )}
+                </div>
+                <div className="feed-body">
+                  <div className="feed-meta">
+                    <span>{item.kind === 'event' ? 'Sự kiện' : 'Bài viết'}</span>
+                    <span>{item.meta}</span>
+                    {item.time && <span>{formatDateTime(item.time)}</span>}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="surface">
-              <div className="section-heading">
-                <h2>Member status</h2>
-              </div>
-              <div className="bar-chart">
-                {Object.entries(summary.member.memberStatusCounts).map(([status, count]) => (
-                  <div className="bar-row" key={status}>
-                    <span>{status}</span>
-                    <div>
-                      <i style={{ width: `${(count / maxStatusCount) * 100}%` }} />
-                    </div>
-                    <strong>{count}</strong>
+                  <h2>{item.title}</h2>
+                  {item.description && <p>{item.description}</p>}
+                  <div className="feed-footer">
+                    <StatusBadge value={item.status} label={item.statusLabel} />
+                    {item.location && (
+                      <span>
+                        <MapPin size={15} aria-hidden="true" />
+                        {item.location}
+                      </span>
+                    )}
+                    <span>
+                      {item.kind === 'event' ? (
+                        <UsersRound size={15} aria-hidden="true" />
+                      ) : (
+                        <MessageCircle size={15} aria-hidden="true" />
+                      )}
+                      {item.engagementLabel}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="surface">
-            <div className="section-heading">
-              <h2>Sự kiện sắp tới</h2>
-              <Link className="text-action" to="/events">Xem tất cả</Link>
-            </div>
-            {summary.event.upcomingEvents.length ? <EventTable events={summary.event.upcomingEvents} /> : <EmptyText>Chưa có sự kiện sắp tới.</EmptyText>}
-          </section>
-
-          <section className="surface">
-            <div className="section-heading">
-              <h2>Bài báo cáo gần đây</h2>
-              <Link className="text-action" to="/posts">Xem tất cả</Link>
-            </div>
-            {summary.content.newPosts.length ? <PostList posts={summary.content.newPosts} /> : <EmptyText>Chưa có bài viết mới.</EmptyText>}
-          </section>
-        </>
-      ) : (
-        <>
-          <section className="dashboard-stat-grid">
-            <StatCard label="Sự kiện sắp tới" value={summary.event.upcomingEventCount} to="/events" />
-            <StatCard label="Sự kiện đã đăng ký" value={summary.event.registeredEvents.length} to="/events" />
-            <StatCard label="Thông báo chưa đọc" value={summary.notification.count} to="/notifications" />
-            <StatCard label="Bài viết mới" value={summary.content.newPosts.length} to="/posts" />
-          </section>
-
-          <section className="surface">
-            <div className="section-heading">
-              <h2>Upcoming events</h2>
-              <Link className="text-action" to="/events">Xem tất cả</Link>
-            </div>
-            {summary.event.upcomingEvents.length ? <EventTable events={summary.event.upcomingEvents} /> : <EmptyText>Chưa có sự kiện sắp tới.</EmptyText>}
-          </section>
-
-          <section className="surface">
-            <div className="section-heading">
-              <h2>My events</h2>
-            </div>
-            {summary.event.registeredEvents.length ? (
-              <div className="table-wrap">
-                <table className="data-table compact-table">
-                  <thead>
-                    <tr>
-                      <th>Sự kiện</th>
-                      <th>Trạng thái</th>
-                      <th>Thời gian</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {summary.event.registeredEvents.map((participation) => (
-                      <tr key={participation.id}>
-                        <td>
-                          <Link className="text-action" to={`/events/${participation.eventId}`}>
-                            {participation.eventTitle}
-                          </Link>
-                        </td>
-                        <td>{participation.status}</td>
-                        <td>{formatDateTime(participation.eventStartTime)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <EmptyText>Chưa đăng ký sự kiện nào.</EmptyText>
-            )}
-          </section>
-
-          <section className="surface">
-            <div className="section-heading">
-              <h2>Latest posts</h2>
-              <Link className="text-action" to="/posts">Xem tất cả</Link>
-            </div>
-            {summary.content.newPosts.length ? <PostList posts={summary.content.newPosts} /> : <EmptyText>Chưa có bài viết mới.</EmptyText>}
-          </section>
-        </>
-      )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

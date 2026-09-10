@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Post, PostFormValues, PostStatus, PostType } from '../../types/post';
 import type { OrganizationUnit } from '../../types/organization';
+import { postStatusLabel, postTypeLabel } from '../../utils/labels';
 
 type PostFormProps = {
   initialValue?: Post;
@@ -70,7 +71,7 @@ export const PostForm = ({
         <select value={values.type} onChange={(event) => updateField('type', event.target.value)}>
           {postTypes.map((type) => (
             <option key={type} value={type}>
-              {type}
+              {postTypeLabel[type]}
             </option>
           ))}
         </select>
@@ -95,7 +96,7 @@ export const PostForm = ({
         <select value={values.status} onChange={(event) => updateField('status', event.target.value)}>
           {postStatuses.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {postStatusLabel[status]}
             </option>
           ))}
         </select>
@@ -121,4 +122,3 @@ export const PostForm = ({
     </form>
   );
 };
-

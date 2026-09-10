@@ -87,6 +87,7 @@ export const memberService = {
         keyword: filters.keyword || undefined,
         organizationId: filters.organizationId || undefined,
         status: filters.status || undefined,
+        role: filters.role || undefined,
         page: filters.page,
         size: filters.size,
         sort: 'fullName,asc',

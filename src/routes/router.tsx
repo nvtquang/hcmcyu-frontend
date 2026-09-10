@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { AuditPage } from '../pages/admin/AuditPage';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { RoleLayout } from '../layouts/RoleLayout';
 import { ChatPage } from '../pages/ChatPage';
@@ -9,7 +10,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { MemberDetailPage } from '../pages/members/MemberDetailPage';
 import { MemberListPage } from '../pages/members/MemberListPage';
 import { NotificationPage } from '../pages/NotificationPage';
-import { PlaceholderPage } from '../pages/PlaceholderPage';
+import { OrganizationPage } from '../pages/organizations/OrganizationPage';
 import { PostDetailPage } from '../pages/posts/PostDetailPage';
 import { PostListPage } from '../pages/posts/PostListPage';
 import { ProfilePage } from '../pages/ProfilePage';
@@ -59,13 +60,13 @@ export const router = createBrowserRouter([
           {
             element: <RoleBasedRoute allowedRoles={['WARD_SECRETARY', 'WARD_DEPUTY_SECRETARY']} />,
             children: [
-              { path: '/organizations', element: <PlaceholderPage title="To dan pho" /> },
+              { path: '/organizations', element: <OrganizationPage /> },
             ],
           },
           {
-            element: <RoleBasedRoute allowedRoles={['WARD_SECRETARY']} />,
+            element: <RoleBasedRoute allowedRoles={['WARD_SECRETARY', 'WARD_DEPUTY_SECRETARY']} />,
             children: [
-              { path: '/audit-logs', element: <PlaceholderPage title="Audit va phan quyen" /> },
+              { path: '/audit-logs', element: <AuditPage /> },
             ],
           },
         ],

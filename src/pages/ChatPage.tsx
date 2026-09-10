@@ -1,4 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { MessageCircle, Plus, Send } from 'lucide-react';
 import {
   useAddConversationMember,
   useChatSocket,
@@ -9,6 +10,7 @@ import {
 } from '../hooks/useChat';
 import { useAuth } from '../stores/AuthContext';
 import type { Conversation, ConversationType, Message } from '../types/chat';
+import { Badge, EmptyState, LoadingSkeleton } from '../components/ui';
 import { formatDateTime } from '../utils/dateTime';
 import { toApiError } from '../utils/apiError';
 
@@ -21,7 +23,7 @@ const conversationTitle = (conversation: Conversation, currentMemberId?: string 
 
   if (conversation.type === 'DIRECT') {
     const otherMember = conversation.memberIds.find((memberId) => memberId !== currentMemberId);
-    return otherMember ? `Chat với ${otherMember}` : 'Direct chat';
+    return otherMember ? `Chat với ${otherMember}` : 'Chat trực tiếp';
   }
 
   return `Nhóm ${conversation.id.slice(0, 8)}`;
@@ -109,7 +111,7 @@ export const ChatPage = () => {
       setMemberIdsInput('');
       setSelectedConversationId(created.id);
     } catch (caught) {
-      setError(toApiError(caught).message ?? 'Không thể tạo conversation');
+      setError(toApiError(caught).message ?? 'Không thể tạo cuộc trò chuyện');
     }
   };
 
@@ -161,6 +163,7 @@ export const ChatPage = () => {
       <aside className="surface chat-sidebar">
         <div className="section-heading">
           <div>
+            <p className="page-eyebrow">Trao đổi nội bộ</p>
             <h1 className="page-title">Chat</h1>
             <p className="page-description">{isConnected ? 'Realtime connected' : 'Đang chờ kết nối realtime'}</p>
           </div>
@@ -168,8 +171,8 @@ export const ChatPage = () => {
 
         <form className="chat-create-form" onSubmit={handleCreateConversation}>
           <select value={conversationType} onChange={(event) => setConversationType(event.target.value as ConversationType)}>
-            <option value="DIRECT">Direct chat</option>
-            <option value="GROUP">Group chat</option>
+            <option value="DIRECT">Chat trực tiếp</option>
+            <option value="GROUP">Nhóm chat</option>
           </select>
           {conversationType === 'GROUP' && (
             <input
@@ -185,12 +188,13 @@ export const ChatPage = () => {
             onChange={(event) => setMemberIdsInput(event.target.value)}
           />
           <button className="primary-button inline-button" type="submit" disabled={createConversation.isPending}>
+            <Plus size={17} aria-hidden="true" />
             Tạo
           </button>
         </form>
 
         <div className="conversation-list">
-          {conversationsQuery.isLoading && <p>Đang tải conversation...</p>}
+          {conversationsQuery.isLoading && <LoadingSkeleton rows={5} />}
           {(conversationsQuery.data ?? []).map((conversation) => (
             <button
               className={conversation.id === selectedConversationId ? 'conversation-item active' : 'conversation-item'}
@@ -199,11 +203,13 @@ export const ChatPage = () => {
               onClick={() => setSelectedConversationId(conversation.id)}
             >
               <strong>{conversationTitle(conversation, user?.memberId)}</strong>
-              <span>{conversation.type} · {conversation.memberIds.length} thành viên</span>
+              <span>
+                {conversation.type === 'GROUP' ? 'Nhóm' : 'Trực tiếp'} · {conversation.memberIds.length} thành viên
+              </span>
             </button>
           ))}
           {!conversationsQuery.isLoading && (conversationsQuery.data ?? []).length === 0 && (
-            <p>Chưa có conversation.</p>
+            <EmptyState title="Chưa có cuộc trò chuyện" />
           )}
         </div>
       </aside>
@@ -212,13 +218,18 @@ export const ChatPage = () => {
         {error && <div className="error-box">{error}</div>}
 
         {!selectedConversation ? (
-          <div className="empty-panel">Chọn hoặc tạo conversation để bắt đầu.</div>
+          <div className="empty-panel">
+            <MessageCircle size={38} aria-hidden="true" />
+            <p>Chọn hoặc tạo cuộc trò chuyện để bắt đầu.</p>
+          </div>
         ) : (
           <>
             <header className="chat-panel-header">
               <div>
                 <h2>{conversationTitle(selectedConversation, user?.memberId)}</h2>
-                <p>{selectedConversation.type} · {selectedConversation.id}</p>
+                <p>
+                  {selectedConversation.type === 'GROUP' ? 'Nhóm chat' : 'Chat trực tiếp'} · {selectedConversation.id}
+                </p>
               </div>
             </header>
 
@@ -259,7 +270,7 @@ export const ChatPage = () => {
                 >
                   Tải tin cũ hơn
                 </button>
-                {messagesQuery.isLoading && <span>Đang tải history...</span>}
+                {messagesQuery.isLoading && <Badge tone="gray">Đang tải history</Badge>}
               </div>
 
               {mergedMessages.map((message) => {
@@ -274,7 +285,7 @@ export const ChatPage = () => {
                   </article>
                 );
               })}
-              {mergedMessages.length === 0 && !messagesQuery.isLoading && <p>Chưa có tin nhắn.</p>}
+              {mergedMessages.length === 0 && !messagesQuery.isLoading && <EmptyState title="Chưa có tin nhắn" />}
             </div>
 
             <form className="message-input" onSubmit={handleSend}>
@@ -285,6 +296,7 @@ export const ChatPage = () => {
                 onChange={(event) => setDraft(event.target.value)}
               />
               <button className="primary-button inline-button" type="submit" disabled={!isConnected || !draft.trim()}>
+                <Send size={17} aria-hidden="true" />
                 Gửi
               </button>
             </form>
@@ -294,4 +306,3 @@ export const ChatPage = () => {
     </div>
   );
 };
-

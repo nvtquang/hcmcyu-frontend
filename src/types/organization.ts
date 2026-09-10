@@ -9,3 +9,16 @@ export type OrganizationUnit = {
   active: boolean;
 };
 
+export type OrganizationUnitFormValues = {
+  name: string;
+  code: string;
+  type: OrganizationUnitType;
+  parentId?: string;
+  active: boolean;
+};
+
+export type OrganizationMemberSummary = {
+  memberId: string;
+  fullName: string;
+  organizationId: string;
+};

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { CalendarPlus, Eye, Pencil } from 'lucide-react';
 import { ForbiddenMessage } from '../../components/ForbiddenMessage';
+import { EmptyState, LoadingSkeleton, PageHeader, StatusBadge } from '../../components/ui';
 import { EventForm } from '../../features/events/EventForm';
 import { useCreateEvent, useDeleteEvent, useEvents } from '../../hooks/useEvents';
 import { useOrganizations } from '../../hooks/useOrganizations';
@@ -8,16 +10,13 @@ import { useAuth } from '../../stores/AuthContext';
 import type { ApiError } from '../../types/api';
 import type { EventFilters, EventFormValues, EventStatus, EventType } from '../../types/event';
 import type { OrganizationUnit } from '../../types/organization';
+import { eventStatusLabel, eventTypeLabel } from '../../utils/labels';
 import { formatDateTime } from '../../utils/dateTime';
 import { toApiError } from '../../utils/apiError';
 
 const pageSize = 10;
 
-const isOfficer = (role: string | null) =>
-  role === 'WARD_SECRETARY' ||
-  role === 'WARD_DEPUTY_SECRETARY' ||
-  role === 'TDP_SECRETARY' ||
-  role === 'TDP_DEPUTY_SECRETARY';
+const canManageEvents = (role: string | null) => role === 'WARD_SECRETARY' || role === 'WARD_DEPUTY_SECRETARY';
 
 const getVisibleOrganizations = (
   organizations: OrganizationUnit[],
@@ -51,7 +50,7 @@ export const EventListPage = () => {
   );
   const fixedOrganizationId =
     role === 'TDP_SECRETARY' || role === 'TDP_DEPUTY_SECRETARY' ? user?.tdpId : undefined;
-  const canManage = isOfficer(role);
+  const canManage = canManageEvents(role);
 
   const filters: EventFilters = {
     type,
@@ -101,28 +100,30 @@ export const EventListPage = () => {
 
   return (
     <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Sự kiện</h1>
-          <p className="page-description">Danh sách và sự kiện sắp tới theo phạm vi được phép.</p>
-        </div>
-        {canManage && (
-          <button className="primary-button inline-button" type="button" onClick={() => setIsCreateOpen(true)}>
-            Tạo sự kiện
-          </button>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Hoạt động"
+        title="Sự kiện"
+        description="Danh sách và sự kiện sắp tới theo phạm vi được phép."
+        actions={
+          canManage && (
+            <button className="primary-button inline-button" type="button" onClick={() => setIsCreateOpen(true)}>
+              <CalendarPlus size={17} aria-hidden="true" />
+              Tạo sự kiện
+            </button>
+          )
+        }
+      />
 
       <section className="surface toolbar events-toolbar">
         <label>
           Loại
           <select value={type} onChange={(event) => { setType(event.target.value as EventType | ''); setPage(0); }}>
             <option value="">Tất cả</option>
-            <option value="EVENT">EVENT</option>
-            <option value="MEETING">MEETING</option>
-            <option value="CONGRESS">CONGRESS</option>
-            <option value="TASK">TASK</option>
-            <option value="ACTIVITY">ACTIVITY</option>
+            {(Object.keys(eventTypeLabel) as EventType[]).map((item) => (
+              <option key={item} value={item}>
+                {eventTypeLabel[item]}
+              </option>
+            ))}
           </select>
         </label>
         <label>
@@ -144,10 +145,11 @@ export const EventListPage = () => {
           Trạng thái
           <select value={status} onChange={(event) => { setStatus(event.target.value as EventStatus | ''); setPage(0); }}>
             <option value="">Tất cả</option>
-            <option value="DRAFT">DRAFT</option>
-            <option value="PUBLISHED">PUBLISHED</option>
-            <option value="CANCELLED">CANCELLED</option>
-            <option value="COMPLETED">COMPLETED</option>
+            {(Object.keys(eventStatusLabel) as EventStatus[]).map((item) => (
+              <option key={item} value={item}>
+                {eventStatusLabel[item]}
+              </option>
+            ))}
           </select>
         </label>
         <label>
@@ -156,7 +158,7 @@ export const EventListPage = () => {
         </label>
         <label className="checkbox-label">
           <input type="checkbox" checked={upcoming} onChange={(event) => { setUpcoming(event.target.checked); setPage(0); }} />
-          Upcoming
+          Sắp tới
         </label>
       </section>
 
@@ -165,7 +167,9 @@ export const EventListPage = () => {
 
       {isCreateOpen && (
         <section className="surface section-gap">
-          <h2>Tạo sự kiện</h2>
+          <div className="section-heading">
+            <h2>Tạo sự kiện</h2>
+          </div>
           <EventForm
             organizations={organizations}
             fixedOrganizationId={fixedOrganizationId}
@@ -178,16 +182,28 @@ export const EventListPage = () => {
       )}
 
       <section className="event-grid section-gap">
-        {eventsQuery.isLoading && <div className="surface">Đang tải sự kiện...</div>}
-        {!eventsQuery.isLoading && events.length === 0 && <div className="surface">Không có sự kiện.</div>}
+        {eventsQuery.isLoading && (
+          <div className="surface">
+            <LoadingSkeleton rows={4} />
+          </div>
+        )}
+        {!eventsQuery.isLoading && events.length === 0 && (
+          <div className="surface">
+            <EmptyState title="Không có sự kiện" description="Thử thay đổi bộ lọc hoặc bỏ chọn sắp tới." />
+          </div>
+        )}
         {events.map((event) => (
           <article className="surface event-card" key={event.id}>
             <div>
-              <span className="pill">{event.type}</span>
+              <StatusBadge value={event.status} label={eventStatusLabel[event.status]} />
               <h2>{event.title}</h2>
               <p>{event.location || 'Chưa có địa điểm'}</p>
             </div>
             <dl className="compact-list">
+              <div>
+                <dt>Loại</dt>
+                <dd>{eventTypeLabel[event.type]}</dd>
+              </div>
               <div>
                 <dt>Bắt đầu</dt>
                 <dd>{formatDateTime(event.startTime)}</dd>
@@ -200,18 +216,16 @@ export const EventListPage = () => {
                 <dt>Hạn đăng ký</dt>
                 <dd>{formatDateTime(event.registrationDeadline)}</dd>
               </div>
-              <div>
-                <dt>Trạng thái</dt>
-                <dd>{event.status}</dd>
-              </div>
             </dl>
             <div className="table-actions">
               <Link className="text-action" to={`/events/${event.id}`}>
+                <Eye size={16} aria-hidden="true" />
                 Xem
               </Link>
               {canManage && (
                 <>
                   <Link className="text-action" to={`/events/${event.id}?mode=edit`}>
+                    <Pencil size={16} aria-hidden="true" />
                     Sửa
                   </Link>
                   <button className="danger-link" type="button" onClick={() => handleDelete(event.id)}>
@@ -248,4 +262,3 @@ export const EventListPage = () => {
     </>
   );
 };
-

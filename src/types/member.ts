@@ -46,7 +46,7 @@ export type MemberFilters = {
   keyword?: string;
   organizationId?: string;
   status?: MemberStatus | '';
+  role?: MemberRole | '';
   page: number;
   size: number;
 };
-

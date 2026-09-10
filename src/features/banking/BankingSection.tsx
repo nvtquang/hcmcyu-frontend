@@ -1,4 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
+import { QrCode, Upload } from 'lucide-react';
+import { EmptyState } from '../../components/ui';
 import type { BankingFormValues, BankingInfo } from '../../types/banking';
 import { resolveAssetUrl } from '../../utils/assetUrl';
 
@@ -17,7 +19,7 @@ type BankingSectionProps = {
 };
 
 export const BankingSection = ({
-  title = 'THÔNG TIN NGÂN HÀNG',
+  title = 'Thông tin ngân hàng',
   banking,
   isLoading,
   isEditable,
@@ -65,7 +67,11 @@ export const BankingSection = ({
     <section className="surface section-gap">
       <div className="section-heading">
         <div>
+          <p className="page-eyebrow">QR Banking</p>
           <h2>{title}</h2>
+          <p className="page-description">
+            QR ngân hàng là thông tin cá nhân phục vụ cán bộ chuyển khoản hỗ trợ, không phải dịch vụ thanh toán.
+          </p>
           {banking?.fullName && <p className="page-description">{banking.fullName}</p>}
         </div>
       </div>
@@ -75,7 +81,7 @@ export const BankingSection = ({
       <div className="banking-layout">
         <form className="member-form" onSubmit={handleSubmit}>
           <label>
-            Bank name
+            Ngân hàng
             <input
               disabled={!isEditable}
               maxLength={255}
@@ -84,7 +90,7 @@ export const BankingSection = ({
             />
           </label>
           <label>
-            Bank code
+            Mã ngân hàng
             <input
               disabled={!isEditable}
               maxLength={50}
@@ -93,7 +99,7 @@ export const BankingSection = ({
             />
           </label>
           <label>
-            Account number
+            Số tài khoản
             <input
               disabled={!isEditable}
               maxLength={50}
@@ -102,7 +108,7 @@ export const BankingSection = ({
             />
           </label>
           <label>
-            Account holder
+            Chủ tài khoản
             <input
               disabled={!isEditable}
               maxLength={255}
@@ -121,11 +127,16 @@ export const BankingSection = ({
 
         <div className="qr-panel">
           <div className="qr-preview">
-            {qrUrl ? <img src={qrUrl} alt="QR Banking" /> : <span>Chưa có QR</span>}
+            {qrUrl ? (
+              <img src={qrUrl} alt="QR Banking" />
+            ) : (
+              <EmptyState title="Chưa có QR" description="Tải ảnh QR ngân hàng nếu cần." />
+            )}
           </div>
           <div className="form-actions qr-actions">
             {qrUrl && (
               <button className="primary-button inline-button" type="button" onClick={() => setIsQrOpen(true)}>
+                <QrCode size={17} aria-hidden="true" />
                 Mở QR
               </button>
             )}
@@ -150,6 +161,7 @@ export const BankingSection = ({
                   disabled={isUploading}
                   onClick={() => fileInputRef.current?.click()}
                 >
+                  <Upload size={17} aria-hidden="true" />
                   {qrUrl ? 'Thay QR' : 'Tải QR'}
                 </button>
                 <button
@@ -179,4 +191,3 @@ export const BankingSection = ({
     </section>
   );
 };
-

@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { Upload } from 'lucide-react';
 import type { Member } from '../../types/member';
 import { resolveAssetUrl } from '../../utils/assetUrl';
 
@@ -20,9 +21,10 @@ export const AvatarSection = ({ member, isUploading, isDeleting, onUpload, onDel
         {avatarUrl ? <img src={avatarUrl} alt={member.fullName} /> : <span>{member.fullName.charAt(0)}</span>}
       </div>
       <div>
-        <h2>Ảnh đại diện</h2>
-        <p className="page-description">Hỗ trợ jpg, jpeg, png, webp theo validation backend.</p>
-        <div className="form-actions">
+        <p className="page-eyebrow">Hồ sơ đoàn viên</p>
+        <h2>{member.fullName}</h2>
+        <p className="page-description">Ảnh đại diện hỗ trợ jpg, jpeg, png, webp theo validation backend.</p>
+        <div className="form-actions section-gap">
           <input
             ref={fileInputRef}
             className="visually-hidden"
@@ -42,6 +44,7 @@ export const AvatarSection = ({ member, isUploading, isDeleting, onUpload, onDel
             disabled={isUploading}
             onClick={() => fileInputRef.current?.click()}
           >
+            <Upload size={17} aria-hidden="true" />
             Tải avatar
           </button>
           <button
@@ -57,4 +60,3 @@ export const AvatarSection = ({ member, isUploading, isDeleting, onUpload, onDel
     </section>
   );
 };
-

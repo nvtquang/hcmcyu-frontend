@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Pencil, ShieldCheck } from 'lucide-react';
 import { ForbiddenMessage } from '../../components/ForbiddenMessage';
+import { Card, LoadingSkeleton, PageHeader, StatusBadge, UserAvatar } from '../../components/ui';
 import { BankingSection } from '../../features/banking/BankingSection';
 import { MemberForm } from '../../features/members/MemberForm';
 import { RoleAssignmentForm, toMemberFormValues } from '../../features/members/RoleAssignmentForm';
@@ -9,6 +11,8 @@ import { useOrganizations } from '../../hooks/useOrganizations';
 import { useAuth } from '../../stores/AuthContext';
 import type { ApiError } from '../../types/api';
 import type { MemberFormValues, MemberRole } from '../../types/member';
+import { resolveAssetUrl } from '../../utils/assetUrl';
+import { memberStatusLabel, roleLabel } from '../../utils/labels';
 import { toApiError } from '../../utils/apiError';
 
 const isTdpOfficer = (role: string | null) => role === 'TDP_SECRETARY' || role === 'TDP_DEPUTY_SECRETARY';
@@ -77,7 +81,11 @@ export const MemberDetailPage = () => {
   }
 
   if (memberQuery.isLoading) {
-    return <section className="surface">Đang tải hồ sơ đoàn viên...</section>;
+    return (
+      <Card>
+        <LoadingSkeleton rows={5} />
+      </Card>
+    );
   }
 
   if (!memberQuery.data) {
@@ -85,43 +93,50 @@ export const MemberDetailPage = () => {
   }
 
   const member = memberQuery.data;
+  const avatarUrl = resolveAssetUrl(member.avatarUrl);
 
   return (
-    <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Chi tiết đoàn viên</h1>
-          <p className="page-description">Phân quyền được xử lý bằng chức năng riêng, không nằm trong form hồ sơ.</p>
-        </div>
-        <div className="header-actions">
-          <Link className="secondary-button inline-button" to="/members">
-            Quay lại
-          </Link>
-          <button
-            className="primary-button inline-button"
-            type="button"
-            onClick={() => setSearchParams(isEditing ? {} : { mode: 'edit' })}
-          >
-            {isEditing ? 'Xem chi tiết' : 'Sửa hồ sơ'}
-          </button>
-          {canAssignRole && (
+    <div className="page-stack">
+      <PageHeader
+        eyebrow="Hồ sơ đoàn viên"
+        title={member.fullName}
+        description="Phân quyền được xử lý bằng chức năng riêng, không nằm trong form hồ sơ."
+        actions={
+          <>
+            <Link className="secondary-button inline-button" to="/members">
+              <ArrowLeft size={17} aria-hidden="true" />
+              Quay lại
+            </Link>
             <button
               className="primary-button inline-button"
               type="button"
-              onClick={() => setSearchParams(isAssigningRole ? {} : { mode: 'role' })}
+              onClick={() => setSearchParams(isEditing ? {} : { mode: 'edit' })}
             >
-              {isAssigningRole ? 'Đóng phân quyền' : 'Phân quyền'}
+              <Pencil size={17} aria-hidden="true" />
+              {isEditing ? 'Xem chi tiết' : 'Sửa hồ sơ'}
             </button>
-          )}
-        </div>
-      </div>
+            {canAssignRole && (
+              <button
+                className="primary-button inline-button"
+                type="button"
+                onClick={() => setSearchParams(isAssigningRole ? {} : { mode: 'role' })}
+              >
+                <ShieldCheck size={17} aria-hidden="true" />
+                {isAssigningRole ? 'Đóng phân quyền' : 'Phân quyền'}
+              </button>
+            )}
+          </>
+        }
+      />
 
       {formError?.status === 403 && <ForbiddenMessage />}
       {formError && formError.status !== 403 && <section className="error-box">{formError.message}</section>}
 
       {isEditing && (
-        <section className="surface">
-          <h2>Sửa đoàn viên</h2>
+        <Card>
+          <div className="section-heading">
+            <h2>Sửa đoàn viên</h2>
+          </div>
           <MemberForm
             initialValue={member}
             organizations={organizations}
@@ -131,12 +146,14 @@ export const MemberDetailPage = () => {
             onSubmit={handleUpdate}
             onCancel={() => setSearchParams({})}
           />
-        </section>
+        </Card>
       )}
 
       {isAssigningRole && canAssignRole && (
-        <section className="surface">
-          <h2>Phân quyền</h2>
+        <Card>
+          <div className="section-heading">
+            <h2>Phân quyền</h2>
+          </div>
           <RoleAssignmentForm
             member={member}
             organizations={organizations}
@@ -144,16 +161,25 @@ export const MemberDetailPage = () => {
             onSubmit={handleRoleUpdate}
             onCancel={() => setSearchParams({})}
           />
-        </section>
+        </Card>
       )}
 
       {!isEditing && !isAssigningRole && (
         <>
-          <section className="surface detail-grid">
+          <Card className="profile-card">
+            <UserAvatar name={member.fullName} src={avatarUrl} size="lg" />
             <div>
-              <span>Họ tên</span>
-              <strong>{member.fullName}</strong>
+              <p className="page-eyebrow">Thông tin hồ sơ</p>
+              <h2>{member.fullName}</h2>
+              <p className="page-description">{member.organizationName || member.organizationId}</p>
+              <div className="form-actions section-gap">
+                <StatusBadge value={member.memberStatus} label={memberStatusLabel[member.memberStatus]} />
+                <StatusBadge value={member.memberRole} label={roleLabel[member.memberRole] ?? member.memberRole} />
+              </div>
             </div>
+          </Card>
+
+          <Card className="detail-grid">
             <div>
               <span>Email</span>
               <strong>{member.email || '-'}</strong>
@@ -175,14 +201,6 @@ export const MemberDetailPage = () => {
               <strong>{member.organizationName || member.organizationId}</strong>
             </div>
             <div>
-              <span>Trạng thái</span>
-              <strong>{member.memberStatus}</strong>
-            </div>
-            <div>
-              <span>Chức vụ</span>
-              <strong>{member.memberRole}</strong>
-            </div>
-            <div>
               <span>Ngày vào Đoàn</span>
               <strong>{member.youthUnionJoinDate || '-'}</strong>
             </div>
@@ -190,7 +208,8 @@ export const MemberDetailPage = () => {
               <span>Địa chỉ</span>
               <strong>{member.address || '-'}</strong>
             </div>
-          </section>
+          </Card>
+
           <BankingSection
             banking={bankingQuery.data}
             errorMessage={bankingQuery.error ? toApiError(bankingQuery.error).message : null}
@@ -198,6 +217,6 @@ export const MemberDetailPage = () => {
           />
         </>
       )}
-    </>
+    </div>
   );
 };
