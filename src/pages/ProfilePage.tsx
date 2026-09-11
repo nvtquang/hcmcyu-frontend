@@ -128,7 +128,7 @@ export const ProfilePage = () => {
         <div className="detail-grid">
           <div>
             <span>Tổ dân phố</span>
-            <strong>{member.organizationName || member.organizationId}</strong>
+            <strong>{member.organizationName || 'Chưa có TDP'}</strong>
           </div>
           <div>
             <span>Trạng thái</span>

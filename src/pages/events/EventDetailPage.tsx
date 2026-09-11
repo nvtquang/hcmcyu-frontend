@@ -13,6 +13,7 @@ import {
   useUpdateEvent,
   useUpdateParticipation,
 } from '../../hooks/useEvents';
+import { useMemberNameMap } from '../../hooks/useMembers';
 import { useOrganizations } from '../../hooks/useOrganizations';
 import { useAuth } from '../../stores/AuthContext';
 import type { ApiError } from '../../types/api';
@@ -49,6 +50,7 @@ export const EventDetailPage = () => {
   );
   const fixedOrganizationId = isTdpOfficer(role) ? user?.tdpId : undefined;
   const myParticipation = myParticipationsQuery.data?.find((item) => item.eventId === id);
+  const participantNameMap = useMemberNameMap((participantsQuery.data ?? []).map((participant) => participant.memberId));
 
   const handleUpdate = async (values: EventFormValues) => {
     setFormError(null);
@@ -105,6 +107,8 @@ export const EventDetailPage = () => {
   const event = eventQuery.data;
   const summary = summaryQuery.data ?? { going: 0, notGoing: 0, undecided: 0 };
   const participantCount = summary.going + summary.notGoing + summary.undecided;
+  const eventOrganizationName =
+    organizationsQuery.data?.find((organization) => organization.id === event.organizationId)?.name ?? 'Chưa có TDP';
 
   return (
     <div className="page-stack">
@@ -164,7 +168,7 @@ export const EventDetailPage = () => {
             </div>
             <div>
               <span>Tổ chức</span>
-              <strong>{event.organizationId}</strong>
+              <strong>{eventOrganizationName}</strong>
             </div>
             <div>
               <span>Bắt đầu</span>
@@ -246,7 +250,7 @@ export const EventDetailPage = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Member ID</th>
+                        <th>Đoàn viên</th>
                         <th>Trạng thái</th>
                         <th>Cập nhật</th>
                       </tr>
@@ -254,7 +258,7 @@ export const EventDetailPage = () => {
                     <tbody>
                       {(participantsQuery.data ?? []).map((participant) => (
                         <tr key={participant.id}>
-                          <td>{participant.memberId}</td>
+                          <td>{participantNameMap[participant.memberId] ?? 'Đoàn viên'}</td>
                           <td>
                             <StatusBadge value={participant.status} label={participationStatusLabel[participant.status]} />
                           </td>

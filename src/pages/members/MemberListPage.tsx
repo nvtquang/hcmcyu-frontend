@@ -217,12 +217,12 @@ export const MemberListPage = () => {
                         <UserAvatar name={member.fullName} src={resolveAssetUrl(member.avatarUrl)} size="sm" />
                         <div>
                           <strong>{member.fullName}</strong>
-                          <span>{member.phone || member.id}</span>
+                          <span>{member.phone || 'Chưa có số điện thoại'}</span>
                         </div>
                       </div>
                     </td>
                     <td>{member.email || '-'}</td>
-                    <td>{member.organizationName || member.organizationId}</td>
+                    <td>{member.organizationName || 'Chưa có TDP'}</td>
                     <td>
                       <StatusBadge value={member.memberStatus} label={memberStatusLabel[member.memberStatus]} />
                     </td>

@@ -312,7 +312,7 @@ export const OrganizationPage = () => {
                 <Link className="dashboard-list-item" key={member.memberId} to={`/members/${member.memberId}`}>
                   <div>
                     <strong>{member.fullName}</strong>
-                    <span>{member.memberId}</span>
+                    <span>Đoàn viên thuộc {selectedOrganization?.name ?? 'TDP'}</span>
                   </div>
                   <UsersRound size={18} aria-hidden="true" />
                 </Link>

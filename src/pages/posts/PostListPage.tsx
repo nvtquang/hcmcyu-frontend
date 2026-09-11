@@ -63,6 +63,10 @@ export const PostListPage = () => {
 
   const posts = postsQuery.data?.content ?? [];
   const totalPages = postsQuery.data?.totalPages ?? 0;
+  const organizationNameById = useMemo(
+    () => new Map((organizationsQuery.data ?? []).map((item) => [item.id, item.name])),
+    [organizationsQuery.data],
+  );
 
   const handleCreate = async (values: PostFormValues) => {
     setFormError(null);
@@ -187,7 +191,7 @@ export const PostListPage = () => {
               </div>
               <div>
                 <dt>TDP</dt>
-                <dd>{post.organizationId}</dd>
+                <dd>{organizationNameById.get(post.organizationId) ?? 'Chưa có TDP'}</dd>
               </div>
               <div>
                 <dt>Ngày tạo</dt>

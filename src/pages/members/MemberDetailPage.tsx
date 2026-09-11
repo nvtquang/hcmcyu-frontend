@@ -171,7 +171,7 @@ export const MemberDetailPage = () => {
             <div>
               <p className="page-eyebrow">Thông tin hồ sơ</p>
               <h2>{member.fullName}</h2>
-              <p className="page-description">{member.organizationName || member.organizationId}</p>
+              <p className="page-description">{member.organizationName || 'Chưa có TDP'}</p>
               <div className="form-actions section-gap">
                 <StatusBadge value={member.memberStatus} label={memberStatusLabel[member.memberStatus]} />
                 <StatusBadge value={member.memberRole} label={roleLabel[member.memberRole] ?? member.memberRole} />
@@ -198,7 +198,7 @@ export const MemberDetailPage = () => {
             </div>
             <div>
               <span>Tổ dân phố</span>
-              <strong>{member.organizationName || member.organizationId}</strong>
+              <strong>{member.organizationName || 'Chưa có TDP'}</strong>
             </div>
             <div>
               <span>Ngày vào Đoàn</span>

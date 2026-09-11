@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { ForbiddenMessage } from '../../components/ForbiddenMessage';
 import { EmptyState, LoadingSkeleton, PageHeader, StatusBadge } from '../../components/ui';
 import { useAuditLogs } from '../../hooks/useAuditLogs';
+import { useMemberNameMap } from '../../hooks/useMembers';
 import { useOrganizations } from '../../hooks/useOrganizations';
 import { useAuth } from '../../stores/AuthContext';
 import type { AuditAction, AuditLogFilters, AuditResourceType, AuditResult } from '../../types/audit';
@@ -73,6 +74,21 @@ export const AuditPage = () => {
   const logs = auditQuery.data?.content ?? [];
   const totalPages = auditQuery.data?.totalPages ?? 0;
   const isWardSecretary = role === 'WARD_SECRETARY';
+  const memberResourceIds = useMemo(
+    () => logs.filter((log) => log.resourceType === 'MEMBER').map((log) => log.resourceId),
+    [logs],
+  );
+  const memberResourceNameMap = useMemberNameMap(memberResourceIds);
+
+  const organizationName = (id?: string | null) =>
+    id ? (organizationsQuery.data ?? []).find((organization) => organization.id === id)?.name ?? shortId(id) : '-';
+
+  const resourceName = (type: AuditResourceType, id: string) => {
+    if (type === 'MEMBER') {
+      return memberResourceNameMap[id] ?? 'Đoàn viên';
+    }
+    return shortId(id);
+  };
 
   if (auditQuery.error && toApiError(auditQuery.error).status === 403) {
     return <ForbiddenMessage />;
@@ -203,12 +219,9 @@ export const AuditPage = () => {
                     <td>{roleLabel[log.actorRole as keyof typeof roleLabel] ?? log.actorRole}</td>
                     <td>{actionLabel[log.action]}</td>
                     <td>
-                      {resourceLabel[log.resourceType]} · {shortId(log.resourceId)}
+                      {resourceLabel[log.resourceType]} · {resourceName(log.resourceType, log.resourceId)}
                     </td>
-                    <td>
-                      {(organizationsQuery.data ?? []).find((organization) => organization.id === log.organizationId)
-                        ?.name ?? shortId(log.organizationId)}
-                    </td>
+                    <td>{organizationName(log.organizationId)}</td>
                     <td>
                       <StatusBadge
                         value={log.result === 'SUCCESS' ? 'ACTIVE' : 'INACTIVE'}
