@@ -130,7 +130,11 @@ export const ProfilePage = () => {
       />
 
       {profileError && <section className="error-box">{profileError}</section>}
-      {profileSuccess && <section className="success-box">{profileSuccess}</section>}
+      {profileSuccess && (
+        <section className="success-box" role="status" aria-live="polite">
+          {profileSuccess}
+        </section>
+      )}
 
       <AvatarSection
         member={member}

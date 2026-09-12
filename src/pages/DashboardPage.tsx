@@ -165,6 +165,7 @@ export const DashboardPage = () => {
 
       <div className={isWard ? 'feed-layout' : 'feed-layout feed-layout-readable'}>
         <aside className="feed-rail">
+          <Link className="feed-profile-link" to="/profile" title="Mở hồ sơ cá nhân">
           <Card className="feed-profile-card">
             <UserAvatar name={displayName} src={avatarUrl} size="md" />
             <div>
@@ -172,6 +173,7 @@ export const DashboardPage = () => {
               <span>{user?.role ? roleLabel[user.role] : 'Đoàn viên'}</span>
             </div>
           </Card>
+          </Link>
           <Card className="feed-filter-card">
             <span>Sắp xếp bảng tin</span>
             <button className={feedSort === 'newest' ? 'feed-sort active' : 'feed-sort'} type="button" onClick={() => setFeedSort('newest')}>

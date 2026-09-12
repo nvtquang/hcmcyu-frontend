@@ -127,9 +127,17 @@ textarea:focus-visible {
 
 .header-user {
   align-items: center;
+  border-radius: var(--radius);
+  color: inherit;
   display: flex;
   gap: 10px;
   min-width: 0;
+  padding: 4px 6px;
+  text-decoration: none;
+}
+
+.header-user:hover {
+  background: #f8fafc;
 }
 
 .header-user div:last-child {
@@ -1523,6 +1531,22 @@ textarea:focus-visible {
   display: grid;
   gap: 12px;
   grid-template-columns: auto minmax(0, 1fr);
+}
+
+.feed-profile-link {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+}
+
+.feed-profile-link .feed-profile-card {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.feed-profile-link:hover .feed-profile-card {
+  border-color: #bfdbfe;
+  box-shadow: 0 12px 30px rgb(7 59 118 / 10%);
+  transform: translateY(-1px);
 }
 
 .feed-profile-card strong,

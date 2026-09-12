@@ -79,7 +79,11 @@ export const BankingSection = ({
       </div>
 
       {errorMessage && <div className="error-box">{errorMessage}</div>}
-      {successMessage && <div className="success-box">{successMessage}</div>}
+      {successMessage && (
+        <div className="success-box" role="status" aria-live="polite">
+          {successMessage}
+        </div>
+      )}
 
       <div className="banking-layout">
         <form className="member-form" onSubmit={handleSubmit}>

@@ -12,12 +12,8 @@ import {
   UserRound,
   UsersRound,
 } from 'lucide-react';
-import { useMyProfile } from '../hooks/useMembers';
 import { useAuth } from '../stores/AuthContext';
 import type { NavigationItem } from '../types/navigation';
-import { resolveAssetUrl } from '../utils/assetUrl';
-import { roleLabel } from '../utils/labels';
-import { UserAvatar } from './ui';
 
 type SidebarProps = {
   items: NavigationItem[];
@@ -26,11 +22,7 @@ type SidebarProps = {
 };
 
 export const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
-  const { logout, user } = useAuth();
-  const profileQuery = useMyProfile(Boolean(user?.memberId));
-  const profile = profileQuery.data;
-  const displayName = profile?.fullName ?? user?.username;
-  const avatarUrl = resolveAssetUrl(profile?.avatarUrl);
+  const { logout } = useAuth();
   const groups = [
     { key: 'overview', label: 'Tổng quan' },
     { key: 'personal', label: 'Cá nhân' },
@@ -63,15 +55,6 @@ export const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
             <span>Phường Thượng Cát</span>
           </div>
         </Link>
-        {user && (
-          <div className="user-summary">
-            <UserAvatar name={displayName} src={avatarUrl} size="sm" />
-            <div>
-              <strong>{displayName}</strong>
-              <span>{roleLabel[user.role] ?? user.role}</span>
-            </div>
-          </div>
-        )}
         <nav className="nav-list" aria-label="Main navigation">
           {groups.map((group) => {
             const groupItems = items.filter((item) => item.group === group.key);

@@ -34,13 +34,13 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
       {user && (
         <div className="header-right">
           <NotificationBell />
-          <div className="header-user">
+          <Link className="header-user" to="/profile" title="Mở hồ sơ cá nhân">
             <UserAvatar name={displayName} src={avatarUrl} size="sm" />
             <div>
               <strong>{displayName}</strong>
               <span>{roleLabel[user.role] ?? user.role}</span>
             </div>
-          </div>
+          </Link>
           <button className="icon-button" type="button" onClick={logout} aria-label="Đăng xuất" title="Đăng xuất">
             <LogOut size={18} aria-hidden="true" />
           </button>
