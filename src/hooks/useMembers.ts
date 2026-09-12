@@ -13,10 +13,11 @@ export const memberKeys = {
   detail: (id: string) => [...memberKeys.all, 'detail', id] as const,
 };
 
-export const useMyProfile = () =>
+export const useMyProfile = (enabled = true) =>
   useQuery({
     queryKey: memberKeys.me(),
     queryFn: memberService.me,
+    enabled,
   });
 
 export const useUpdateMyProfile = () => {

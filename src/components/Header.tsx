@@ -1,6 +1,8 @@
 import { LogOut, Menu, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useMyProfile } from '../hooks/useMembers';
 import { useAuth } from '../stores/AuthContext';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import { roleLabel } from '../utils/labels';
 import { NotificationBell } from './NotificationBell';
 import { UserAvatar } from './ui';
@@ -11,6 +13,10 @@ type HeaderProps = {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { logout, user } = useAuth();
+  const profileQuery = useMyProfile(Boolean(user?.memberId));
+  const profile = profileQuery.data;
+  const displayName = profile?.fullName ?? user?.username;
+  const avatarUrl = resolveAssetUrl(profile?.avatarUrl);
 
   return (
     <header className="app-header">
@@ -29,9 +35,9 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         <div className="header-right">
           <NotificationBell />
           <div className="header-user">
-            <UserAvatar name={user.username} size="sm" />
+            <UserAvatar name={displayName} src={avatarUrl} size="sm" />
             <div>
-              <strong>{user.username}</strong>
+              <strong>{displayName}</strong>
               <span>{roleLabel[user.role] ?? user.role}</span>
             </div>
           </div>

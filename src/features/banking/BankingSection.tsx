@@ -13,6 +13,7 @@ type BankingSectionProps = {
   isUploading?: boolean;
   isDeleting?: boolean;
   errorMessage?: string | null;
+  successMessage?: string | null;
   onSave?: (values: BankingFormValues) => void;
   onUploadQr?: (file: File) => void;
   onDeleteQr?: () => void;
@@ -27,6 +28,7 @@ export const BankingSection = ({
   isUploading,
   isDeleting,
   errorMessage,
+  successMessage,
   onSave,
   onUploadQr,
   onDeleteQr,
@@ -77,6 +79,7 @@ export const BankingSection = ({
       </div>
 
       {errorMessage && <div className="error-box">{errorMessage}</div>}
+      {successMessage && <div className="success-box">{successMessage}</div>}
 
       <div className="banking-layout">
         <form className="member-form" onSubmit={handleSubmit}>

@@ -12,8 +12,10 @@ import {
   UserRound,
   UsersRound,
 } from 'lucide-react';
+import { useMyProfile } from '../hooks/useMembers';
 import { useAuth } from '../stores/AuthContext';
 import type { NavigationItem } from '../types/navigation';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import { roleLabel } from '../utils/labels';
 import { UserAvatar } from './ui';
 
@@ -25,6 +27,10 @@ type SidebarProps = {
 
 export const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
   const { logout, user } = useAuth();
+  const profileQuery = useMyProfile(Boolean(user?.memberId));
+  const profile = profileQuery.data;
+  const displayName = profile?.fullName ?? user?.username;
+  const avatarUrl = resolveAssetUrl(profile?.avatarUrl);
   const groups = [
     { key: 'overview', label: 'Tổng quan' },
     { key: 'personal', label: 'Cá nhân' },
@@ -59,9 +65,9 @@ export const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
         </Link>
         {user && (
           <div className="user-summary">
-            <UserAvatar name={user.username} size="sm" />
+            <UserAvatar name={displayName} src={avatarUrl} size="sm" />
             <div>
-              <strong>{user.username}</strong>
+              <strong>{displayName}</strong>
               <span>{roleLabel[user.role] ?? user.role}</span>
             </div>
           </div>

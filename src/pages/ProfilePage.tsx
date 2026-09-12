@@ -34,56 +34,74 @@ export const ProfilePage = () => {
   const deleteBankQr = useDeleteBankQr();
   const [profileError, setProfileError] = useState<string | null>(null);
   const [bankingError, setBankingError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+  const [bankingSuccess, setBankingSuccess] = useState<string | null>(null);
+
+  const clearProfileFeedback = () => {
+    setProfileError(null);
+    setProfileSuccess(null);
+  };
+
+  const clearBankingFeedback = () => {
+    setBankingError(null);
+    setBankingSuccess(null);
+  };
 
   const handleProfileSave = async (values: ProfileFormValues) => {
-    setProfileError(null);
+    clearProfileFeedback();
     try {
       await updateProfile.mutateAsync(values);
+      setProfileSuccess('Đã lưu thông tin cá nhân thành công.');
     } catch (error) {
       setProfileError(toApiError(error).message ?? 'Không thể lưu hồ sơ');
     }
   };
 
   const handleAvatarUpload = async (file: File) => {
-    setProfileError(null);
+    clearProfileFeedback();
     try {
       await uploadAvatar.mutateAsync(file);
+      setProfileSuccess('Đã thay đổi ảnh đại diện thành công.');
     } catch (error) {
-      setProfileError(toApiError(error).message ?? 'Không thể tải avatar');
+      setProfileError(toApiError(error).message ?? 'Không thể tải ảnh đại diện');
     }
   };
 
   const handleAvatarDelete = async () => {
-    setProfileError(null);
+    clearProfileFeedback();
     try {
       await deleteAvatar.mutateAsync();
+      setProfileSuccess('Đã xóa ảnh đại diện.');
     } catch (error) {
-      setProfileError(toApiError(error).message ?? 'Không thể xóa avatar');
+      setProfileError(toApiError(error).message ?? 'Không thể xóa ảnh đại diện');
     }
   };
 
   const handleBankingSave = async (values: BankingFormValues) => {
-    setBankingError(null);
+    clearBankingFeedback();
     try {
       await updateBanking.mutateAsync(values);
+      setBankingSuccess('Đã lưu thông tin ngân hàng thành công.');
     } catch (error) {
       setBankingError(toApiError(error).message ?? 'Không thể lưu thông tin ngân hàng');
     }
   };
 
   const handleQrUpload = async (file: File) => {
-    setBankingError(null);
+    clearBankingFeedback();
     try {
       await uploadBankQr.mutateAsync(file);
+      setBankingSuccess('Đã thay đổi QR Banking thành công.');
     } catch (error) {
       setBankingError(toApiError(error).message ?? 'Không thể tải QR Banking');
     }
   };
 
   const handleQrDelete = async () => {
-    setBankingError(null);
+    clearBankingFeedback();
     try {
       await deleteBankQr.mutateAsync();
+      setBankingSuccess('Đã xóa QR Banking.');
     } catch (error) {
       setBankingError(toApiError(error).message ?? 'Không thể xóa QR Banking');
     }
@@ -112,6 +130,7 @@ export const ProfilePage = () => {
       />
 
       {profileError && <section className="error-box">{profileError}</section>}
+      {profileSuccess && <section className="success-box">{profileSuccess}</section>}
 
       <AvatarSection
         member={member}
@@ -158,6 +177,7 @@ export const ProfilePage = () => {
         <BankingSection
           banking={bankingQuery.data}
           errorMessage={bankingError || (bankingQuery.error ? toApiError(bankingQuery.error).message : null)}
+          successMessage={bankingSuccess}
           isEditable
           isLoading={bankingQuery.isLoading}
           isSaving={updateBanking.isPending}

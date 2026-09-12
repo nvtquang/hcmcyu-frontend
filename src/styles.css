@@ -1754,6 +1754,14 @@ textarea:focus-visible {
   padding: 16px;
 }
 
+.success-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius);
+  color: #166534;
+  padding: 16px;
+}
+
 .empty-state {
   align-items: center;
   color: var(--text-secondary);

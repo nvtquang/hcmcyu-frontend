@@ -4,6 +4,7 @@ import { useQueries } from '@tanstack/react-query';
 import { CalendarDays, FileText, MapPin, MessageCircle, Plus, UsersRound } from 'lucide-react';
 import { Card, EmptyState, LoadingSkeleton, PageHeader, StatusBadge, UserAvatar } from '../components/ui';
 import { useEvents } from '../hooks/useEvents';
+import { useMyProfile } from '../hooks/useMembers';
 import { usePosts } from '../hooks/usePosts';
 import { eventService } from '../services/eventService';
 import { useAuth } from '../stores/AuthContext';
@@ -11,6 +12,7 @@ import type { Event } from '../types/event';
 import type { Post } from '../types/post';
 import { eventStatusLabel, eventTypeLabel, postStatusLabel, postTypeLabel, roleLabel } from '../utils/labels';
 import { formatDateTime } from '../utils/dateTime';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 const wardRoles = new Set(['WARD_SECRETARY', 'WARD_DEPUTY_SECRETARY']);
 
@@ -102,6 +104,10 @@ const buildFeed = (
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const profileQuery = useMyProfile(Boolean(user?.memberId));
+  const profile = profileQuery.data;
+  const displayName = profile?.fullName ?? user?.username;
+  const avatarUrl = resolveAssetUrl(profile?.avatarUrl);
   const [feedSort, setFeedSort] = useState<FeedSort>('newest');
   const eventsQuery = useEvents({ page: 0, size: 40, upcoming: false });
   const postsQuery = usePosts({ page: 0, size: 40 });
@@ -160,9 +166,9 @@ export const DashboardPage = () => {
       <div className={isWard ? 'feed-layout' : 'feed-layout feed-layout-readable'}>
         <aside className="feed-rail">
           <Card className="feed-profile-card">
-            <UserAvatar name={user?.username} size="md" />
+            <UserAvatar name={displayName} src={avatarUrl} size="md" />
             <div>
-              <strong>{user?.username ?? 'HCMCYU'}</strong>
+              <strong>{displayName ?? 'HCMCYU'}</strong>
               <span>{user?.role ? roleLabel[user.role] : 'Đoàn viên'}</span>
             </div>
           </Card>
@@ -182,7 +188,7 @@ export const DashboardPage = () => {
 
         <section className="feed-column">
           <Card className="feed-composer">
-            <UserAvatar name={user?.username} size="sm" />
+            <UserAvatar name={displayName} src={avatarUrl} size="sm" />
             <div>
               <strong>Bảng tin Phường Thượng Cát</strong>
               <span>Sự kiện, thông báo và báo cáo hoạt động mới nhất</span>
