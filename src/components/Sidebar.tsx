@@ -6,6 +6,7 @@ import {
   Home,
   Landmark,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   ScrollText,
   ShieldCheck,
@@ -55,6 +56,7 @@ export const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
             <span>Phường Thượng Cát</span>
           </div>
         </Link>
+
         <nav className="nav-list" aria-label="Main navigation">
           {groups.map((group) => {
             const groupItems = items.filter((item) => item.group === group.key);
@@ -79,8 +81,10 @@ export const Sidebar = ({ items, isOpen, onClose }: SidebarProps) => {
             );
           })}
         </nav>
-        <button className="secondary-button" type="button" onClick={logout}>
-          Đăng xuất
+
+        <button className="sidebar-logout-button" type="button" onClick={logout} title="Đăng xuất">
+          <LogOut size={17} aria-hidden="true" />
+          <span>Đăng xuất</span>
         </button>
       </aside>
     </>
